@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+{% load crispy_forms_tags %}
+
+{% block body %}
+<div class="row">
+    <div class="col-md-10 offset-md-1"> 
+
+        <h3>Update member</h3>
+        <hr>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.group|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.sicil_no|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.s_no|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.department_short_name|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.department|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.short_class|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.name_surname|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.date_of_recruitment|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.work_class|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.class_name|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.gross_payment|as_crispy_field }}
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-danger mt-3">Update Member</button>
+        </form>
+
+    </div>
+</div>
+{% endblock body %}

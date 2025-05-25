@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+
+{% block body %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-5">
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <img src="{% static 'images/putzmeister-logo.jpeg' %}" alt="Putzmeister Logo" class="img-fluid" style="max-height: 160px; max-width: 100%;">
+                </div>
+                <h3 class="card-title text-center mb-4">Register</h3>
+                
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="d-grid mt-3">
+                        <button type="submit" class="btn btn-danger">Register</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock body %}
