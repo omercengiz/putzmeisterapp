@@ -18,6 +18,17 @@ services:
       - "8000:8000"
     depends_on:
       - db
+  
+  metabase:
+    container_name: "metabase"
+    restart: "always"
+    image: metabase/metabase
+    env_file:
+      - ./config/metabase_database.env
+    ports:
+      - 3000:3000
+    depends_on:
+      - db
 
 volumes:
   postgres_data:
