@@ -26,6 +26,7 @@ Welcome, <small>{{request.user.username}}</small>
         <th scope="col">Work Class</th>
         <th scope="col">Class Name</th>
         <th scope="col">Gross Payment</th>
+        <th scope="col">Currency</th>
       </tr>
     </thead>
     <tbody>
@@ -44,6 +45,7 @@ Welcome, <small>{{request.user.username}}</small>
             <td>{{worker.work_class}}</td>
             <td>{{worker.class_name}}</td>
             <td>{{worker.gross_payment}}</td>
+            <td>{{worker.currency}}</td>
             <td><a href="/workers/update/{{worker.id}}" class="btn btn-danger">Update</td>
             <td><a href="/workers/delete/{{worker.id}}" class="btn btn-danger">Delete</td>
         </tr> 

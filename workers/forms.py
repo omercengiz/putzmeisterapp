@@ -15,7 +15,8 @@ class WorkersForm(forms.ModelForm):
             "date_of_recruitment",
             "work_class", 
             "class_name",
-            "gross_payment"
+            "gross_payment",
+            "currency",
         ]
         widgets = {
             'date_of_recruitment': forms.DateInput(attrs={'type': 'date'})
