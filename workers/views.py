@@ -15,11 +15,18 @@ def detail(request, id):
 
 @login_required(login_url="user:login")
 def dashboard(request):
-    workers = Workers.objects.filter(author=request.user)
+    query = request.GET.get("q")
+    if query:
+        workers = Workers.objects.filter(author=request.user, sicil_no__icontains=query)
+    else:
+        workers = Workers.objects.filter(author=request.user)
+    
     context = {
-        "workers":workers
+        "workers": workers,
+        "query": query
     }
     return render(request, "dashboard.html", context)
+
 
 @login_required(login_url="user:login")
 def AddWorkers(request):

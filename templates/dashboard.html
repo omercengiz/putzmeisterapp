@@ -7,7 +7,18 @@
 Welcome, <small>{{request.user.username}}</small>
 </p>
 
-<a class='btn btn-danger' href="/workers/addworkers">Add a Member</a>
+<div class="row mb-3 align-items-center">
+  <div class="col-md-6">
+    <form method="get" class="d-flex">
+      <input type="text" name="q" class="form-control me-2" placeholder="Search by Sicil No" value="{{ query|default_if_none:'' }}">
+      <button type="submit" class="btn btn-primary me-2">Search</button>
+      <a href="{% url 'workers:dashboard' %}" class="btn btn-secondary">Clear</a>
+    </form>
+  </div>
+  <div class="col-md-6 text-end">
+    <a class="btn btn-danger" href="/workers/addworkers">Add a Member</a>
+  </div>
+</div>
 <hr>
 
 
@@ -53,5 +64,11 @@ Welcome, <small>{{request.user.username}}</small>
         {% endfor %}
     </tbody>
   </table>
+
+  {% if query and workers|length == 0 %}
+    <div class="alert alert-warning mt-3" role="alert">
+      <strong>{{ query }}</strong> numaralı Sicil No ile eşleşen bir kayıt bulunamadı.
+    </div>
+  {% endif %}
 
 {% endblock body %}
