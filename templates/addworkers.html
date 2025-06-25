@@ -13,12 +13,7 @@
 
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label for="group">Group*</label>
-                    <select class="form-select" id="group" name="group" required>
-                      <option selected disabled>Select a group</option>
-                      <option value="PTR">PTR</option>
-                      <option value="SNY">SNY</option>
-                    </select>
+                    {{ form.group|as_crispy_field }}
                   </div>
                   
                 <div class="col-md-6 mb-3">

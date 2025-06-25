@@ -3,6 +3,7 @@ from django.db import models
 # Create your models here.
 class Workers(models.Model):
     GROUP_CHOICES = [
+        ('', 'Please select a group'),
         ('PTR', 'PTR'),
         ('SNY', 'SNY'),
     ]
@@ -116,9 +117,9 @@ class Workers(models.Model):
 
 
     author = models.ForeignKey("auth.User", on_delete=models.SET_DEFAULT, default=1) #kullanıcı silme işlemi yaparsa default idsi 1 olan kullanıcıya gidecek.
-    created_date = models.DateTimeField(auto_now_add=True) # kullanıcı bunu ne zaman oluşturduysa bilinsin.
-    group = models.CharField(max_length=50, choices=GROUP_CHOICES, verbose_name="Group", default='PTR')
-    sicil_no = models.CharField(max_length=50, verbose_name="Sicil No")
+    created_date = models.DateTimeField(auto_now_add=True) # like an index or or creation timestamp
+    group = models.CharField(max_length=50, choices=GROUP_CHOICES, verbose_name="Group", blank=True, null=True) 
+    sicil_no = models.CharField(max_length=50, verbose_name="Sicil No", unique=True) # unique sicil no
     s_no = models.IntegerField()
     department_short_name = models.CharField(max_length=100, choices=DIRECTOR_NAME, verbose_name="Directorships", default='T') # dep.
     department = models.CharField(max_length=100, choices=DEPARTMENT_CLASS, default='Quality', verbose_name='Department') 

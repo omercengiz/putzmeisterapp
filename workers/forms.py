@@ -21,3 +21,7 @@ class WorkersForm(forms.ModelForm):
         widgets = {
             'date_of_recruitment': forms.DateInput(attrs={'type': 'date'})
         }
+
+    def __init__(self, *args, **kwargs):
+        super(WorkersForm, self).__init__(*args, **kwargs)
+        self.fields['group'].empty_label = "Please select a group"
