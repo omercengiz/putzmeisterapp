@@ -10,7 +10,7 @@ Welcome, <small>{{request.user.username}}</small>
 <div class="row mb-3 align-items-center">
   <div class="col-md-6">
     <form method="get" class="d-flex">
-      <input type="text" name="q" class="form-control me-2" placeholder="Search by Sicil No" value="{{ query|default_if_none:'' }}">
+      <input type="text" name="q" class="form-control me-2" placeholder="Search by Sicil No" value="{{ query|default_if_none:'' }}" style="width: 200px;">
       <button type="submit" class="btn btn-primary me-2">Search</button>
       <a href="{% url 'workers:dashboard' %}" class="btn btn-secondary">Clear</a>
     </form>
@@ -26,18 +26,19 @@ Welcome, <small>{{request.user.username}}</small>
     <thead>
       <tr>
         <th scope="col">id</th>
-        <th scope="col">Group</th>
         <th scope="col">Sicil.No</th>
-        <th scope="col">S.No</th>
-        <th scope="col">Directorships</th>
-        <th scope="col">Department</th>
-        <th scope="col">Short Class</th>
         <th scope="col">Name Surname</th>
         <th scope="col">Date of Recruitment</th>
+        <th scope="col">Group</th>
+        <th scope="col">Directorships</th>
+        <th scope="col">Masraf Yeri</th>  
+        <th scope="col">Department</th>
+        <th scope="col">Short Class</th>
         <th scope="col">Work Class</th>
         <th scope="col">Class Name</th>
         <th scope="col">Gross Payment</th>
         <th scope="col">Currency</th>
+        <th scope="col">Bonus</th>
       </tr>
     </thead>
     <tbody>
@@ -45,18 +46,19 @@ Welcome, <small>{{request.user.username}}</small>
         {% for worker in workers %}
         <tr>
             <th scope="row">{{worker.id}}</th>
-            <td>{{worker.group}}</td>
             <td>{{worker.sicil_no}}</td>
-            <td>{{worker.s_no}}</td>
-            <td>{{worker.department_short_name}}</td>
-            <td>{{worker.department}}</td>
-            <td>{{worker.short_class}}</td>
             <td>{{worker.name_surname}}</td>
             <td>{{worker.date_of_recruitment|date:"d.m.Y"}}</td>
+            <td>{{worker.group}}</td>
+            <td>{{worker.department_short_name}}</td>
+            <td>{{worker.s_no}}</td>
+            <td>{{worker.department}}</td>
+            <td>{{worker.short_class}}</td>
             <td>{{worker.work_class}}</td>
             <td>{{worker.class_name}}</td>
             <td>{{worker.gross_payment}}</td>
             <td>{{worker.currency}}</td>
+            <td>None</td>
             <td><a href="/workers/update/{{worker.id}}" class="btn btn-danger">Update</td>
             <td><a href="/workers/delete/{{worker.id}}" class="btn btn-danger">Delete</td>
         </tr> 

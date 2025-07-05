@@ -141,4 +141,3 @@ class Workers(models.Model):
     # Buradaki alanların bazılarını çoktan seçmeli hale getirebiliriz.
     # python manage.py makemigrations
     # python manage.py migrate
-    
