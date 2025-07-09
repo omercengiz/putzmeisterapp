@@ -55,7 +55,10 @@
             <td>{{worker.currency}}</td>
             <td>None</td>
             <td><a href="/workers/update/{{worker.id}}" class="btn btn-danger">Update</a></td>
-            <td><a href="/workers/delete/{{worker.id}}" class="btn btn-danger">Delete</a></td>
+            <td>
+              <a href="/workers/delete/{{worker.id}}" class="btn btn-danger"
+              onclick="return confirm('Bu çalışanı silmek istediğinize emin misiniz?');">Delete</a>
+            </td>
         </tr> 
         {% endfor %}
     </tbody>
