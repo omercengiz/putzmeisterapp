@@ -1,5 +1,6 @@
 from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 from .forms import WorkersForm
+from django.core.paginator import Paginator
 from django.contrib import messages
 from .models import Workers
 from django.contrib import messages
@@ -19,12 +20,16 @@ def detail(request, id):
 def dashboard(request):
     query = request.GET.get("q")
     if query:
-        workers = Workers.objects.filter(author=request.user, sicil_no__icontains=query)
+        workers = Workers.objects.filter(author=request.user, sicil_no__iexact=query)
     else:
         workers = Workers.objects.filter(author=request.user)
     
+    paginator = Paginator(workers, 5)  
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
     context = {
-        "workers": workers,
+        "page_obj": page_obj,
         "query": query
     }
     return render(request, "dashboard.html", context)
