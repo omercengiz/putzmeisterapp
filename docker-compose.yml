@@ -22,13 +22,12 @@ services:
   metabase:
     container_name: "metabase"
     restart: "always"
-    image: metabase/metabase
-    env_file:
-      - ./config/metabase_database.env
+    image: metabase/metabase:v0.48.4
     ports:
       - 3000:3000
-    depends_on:
-      - db
+    volumes:
+      - metabase_data:/metabase.db
 
 volumes:
   postgres_data:
+  metabase_data:
