@@ -120,7 +120,7 @@ class Workers(models.Model):
     created_date = models.DateTimeField(auto_now_add=True) # like an index or or creation timestamp
     group = models.CharField(max_length=50, choices=GROUP_CHOICES, verbose_name="Group", blank=True, null=True) 
     sicil_no = models.CharField(max_length=50, verbose_name="Sicil No", unique=True) # unique sicil no
-    s_no = models.IntegerField()
+    s_no = models.IntegerField(verbose_name="Cost Center")
     department_short_name = models.CharField(max_length=100, choices=DIRECTOR_NAME, verbose_name="Directorships", default='T') # dep.
     department = models.CharField(max_length=100, choices=DEPARTMENT_CLASS, default='Quality', verbose_name='Department') 
     short_class = models.CharField(max_length=50, choices=SHORT_CLASS_CHOICES, default='B', verbose_name='Status') # there is no name on the column
