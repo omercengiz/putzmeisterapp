@@ -130,6 +130,8 @@ class Workers(models.Model):
     class_name = models.CharField(max_length=50, choices=CLASS_CHOICES, default='İşçi')
     gross_payment = models.DecimalField(max_digits=15, decimal_places=2)
     currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default='TRY')
+    bonus = models.IntegerField(null=True, blank=True)
+
 
 
     # we see object name is a worker name. Displaying the name_surname not an object
