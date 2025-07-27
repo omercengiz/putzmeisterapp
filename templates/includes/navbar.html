@@ -22,9 +22,6 @@
       <ul class="navbar-nav ms-auto mb-2 mb-md-0">
         {% if request.user.is_authenticated %}
           <li class="nav-item">
-            <a class="nav-link active" href="/workers/dashboard">Dashboard</a>
-          </li>
-          <li class="nav-item">
             <a class="nav-link active" href="/user/logout">Logout</a>
           </li>
         {% else %}

@@ -94,8 +94,8 @@
 </nav>
 
 {% if query and page_obj.paginator.count == 0 %}
-  <div class="alert alert-warning mt-3" role="alert">
-    <strong>{{ query }}</strong> numaralı Sicil No ile eşleşen bir kayıt bulunamadı.
+  <div class="alert alert-warning mt-3 text-center mx-auto" style="max-width: 500px;" role="alert">
+    No record was found matching Sicil No. <strong>{{ query }}</strong> 
   </div>
 {% endif %}
 
