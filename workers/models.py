@@ -256,3 +256,4 @@ class ArchivedWorker(BaseWorker):
 
     def __str__(self):
         return f"Archived - {self.name_surname}"
+    
