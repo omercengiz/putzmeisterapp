@@ -1,7 +1,8 @@
+# models.py
 from django.db import models
+from django.contrib.auth.models import User
 
-# Create your models here.
-class Workers(models.Model):
+class BaseWorker(models.Model):
     GROUP_CHOICES = [
         ('', 'Please select a group'),
         ('PTR', 'PTR'),
@@ -115,16 +116,14 @@ class Workers(models.Model):
         ('Sales Adana', 'Sales Adana')        
     ]
 
-
-    author = models.ForeignKey("auth.User", on_delete=models.SET_DEFAULT, default=1) #kullanıcı silme işlemi yaparsa default idsi 1 olan kullanıcıya gidecek.
-    created_date = models.DateTimeField(auto_now_add=True) # like an index or or creation timestamp
-    group = models.CharField(max_length=50, choices=GROUP_CHOICES, verbose_name="Group", blank=True, null=True) 
-    sicil_no = models.CharField(max_length=50, verbose_name="Sicil No", unique=True) # unique sicil no
-    s_no = models.IntegerField(verbose_name="Cost Center")
-    department_short_name = models.CharField(max_length=100, choices=DIRECTOR_NAME, verbose_name="Directorships", default='T') # dep.
-    department = models.CharField(max_length=100, choices=DEPARTMENT_CLASS, default='Quality', verbose_name='Department') 
-    short_class = models.CharField(max_length=50, choices=SHORT_CLASS_CHOICES, default='B', verbose_name='Status') # there is no name on the column
-    name_surname = models.CharField(max_length=100) 
+    author = models.ForeignKey(User, on_delete=models.SET_DEFAULT, default=1)
+    group = models.CharField(max_length=50, choices=GROUP_CHOICES, blank=True, null=True)
+    sicil_no = models.CharField(max_length=50)
+    s_no = models.IntegerField()
+    department_short_name = models.CharField(max_length=100, choices=DIRECTOR_NAME, default='T')
+    department = models.CharField(max_length=100, choices=DEPARTMENT_CLASS, default='Quality')
+    short_class = models.CharField(max_length=50, choices=SHORT_CLASS_CHOICES, default='B')
+    name_surname = models.CharField(max_length=100)
     date_of_recruitment = models.DateTimeField()
     work_class = models.CharField(max_length=50, choices=WORK_CLASS_CHOICES, default='Quality')
     class_name = models.CharField(max_length=50, choices=CLASS_CHOICES, default='İşçi')
@@ -132,14 +131,27 @@ class Workers(models.Model):
     currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default='TRY')
     bonus = models.IntegerField(null=True, blank=True)
 
+    class Meta:
+        abstract = True
 
 
-    # we see object name is a worker name. Displaying the name_surname not an object
+class Workers(BaseWorker):
+    created_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "workers"
+
     def __str__(self):
         return self.name_surname
 
 
-    # ToDo
-    # Buradaki alanların bazılarını çoktan seçmeli hale getirebiliriz.
-    # python manage.py makemigrations
-    # python manage.py migrate
+class ArchivedWorker(BaseWorker):
+    original_id = models.IntegerField()
+    created_date = models.DateTimeField()
+    deleted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "archived_workers"
+
+    def __str__(self):
+        return f"Archived - {self.name_surname}"
