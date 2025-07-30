@@ -17,6 +17,11 @@
             <a class="nav-link active" href="/yanhaklar">Yan Haklar</a>
           </li>
         {% endif %}
+        {% if request.user.is_authenticated and request.user.is_superuser or request.user.is_authenticated and request.user.role_info.role == 'admin' %}
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'user:user_permission_dashboard' %}">Authorization Dashboard</a>
+          </li>
+        {% endif %}
       </ul>
 
       <ul class="navbar-nav ms-auto mb-2 mb-md-0">

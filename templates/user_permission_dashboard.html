@@ -1,0 +1,81 @@
+{% extends "layout.html" %}
+
+{% block body %}
+<h3>User Permissions</h3>
+<hr>
+<!-- Add User Modal Trigger -->
+<div class="mb-3 text-end">
+  <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal">
+    + Add User
+  </button>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content shadow">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="addUserModalLabel">Yeni Kullanıcı Oluştur</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        <form method="post" action="{% url 'user:create_user' %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="id_username" class="form-label">Kullanıcı Adı</label>
+            {{ create_user_form.username }}
+          </div>
+          <div class="mb-3">
+            <label for="id_email" class="form-label">E-posta</label>
+            {{ create_user_form.email }}
+          </div>
+          <div class="mb-3">
+            <label for="id_password" class="form-label">Şifre</label>
+            {{ create_user_form.password }}
+          </div>
+          <div class="mb-3">
+            <label for="id_role" class="form-label">Rol</label>
+            {{ create_user_form.role }}
+          </div>
+          <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-success">Kaydet</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<table class="table table-bordered">
+  <thead>
+    <tr>
+      <th>Username</th>
+      <th>Email</th>
+      <th>Current Role</th>
+      <th>Update Role</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for user in users %}
+    <tr>
+      <td>{{ user.username }}</td>
+      <td>{{ user.email }}</td>
+      <td>{{ user.role_info.role|default:"viewer" }}</td>
+      <td>
+        <form method="post" action="{% url 'user:update_user_role' user.id %}">
+        {% csrf_token %}
+        <div class="d-flex align-items-center">
+            <select name="role" class="form-select" style="width:150px;">
+            <option value="admin" {% if user.role_info.role == "admin" %}selected{% endif %}>Admin</option>
+            <option value="editor" {% if user.role_info.role == "editor" %}selected{% endif %}>Editor</option>
+            <option value="viewer" {% if user.role_info.role == "viewer" or not user.role_info %}selected{% endif %}>Viewer</option>
+            </select>
+            <button class="btn btn-sm btn-primary ms-2" type="submit">Save</button>
+        </div>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
