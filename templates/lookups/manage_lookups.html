@@ -1,0 +1,139 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Lookup Yönetimi</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 40px;
+      background-color: #f4f6f9;
+      color: #333;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 30px;
+      color: #2d3748;
+    }
+
+    .lookup-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 24px;
+    }
+
+    .lookup-card {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      padding: 25px 30px;
+    }
+
+    .lookup-card h2 {
+      font-size: 18px;
+      margin-bottom: 15px;
+      color: #2c5282;
+      border-left: 4px solid #2c5282;
+      padding-left: 10px;
+    }
+
+    form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    form input, form select {
+      flex: 1;
+      padding: 8px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e0;
+    }
+
+    form button {
+      padding: 8px 16px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      background-color: #2b6cb0;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    form button:hover {
+      background-color: #2c5282;
+    }
+
+    ul {
+      list-style: none;
+      padding-left: 0;
+      margin-top: 10px;
+    }
+
+    li {
+      background-color: #edf2f7;
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-delete {
+      background-color: #e53e3e;
+      color: #fff;
+      border: none;
+      padding: 5px 10px;
+      font-size: 13px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn-delete:hover {
+      background-color: #c53030;
+    }
+  </style>
+</head>
+<body>
+  <h1>Lookup Yönetimi</h1>
+
+  <div class="lookup-grid">
+    {% for block in forms_and_items %}
+      {% if block.name in "Group,ShortClass,DirectorName,Currency,WorkClass,ClassName,Department,CostCenter" %}
+        <div class="lookup-card">
+          <h2>{{ block.name }}</h2>
+
+          <form method="post">
+            {% csrf_token %}
+            {{ block.form.as_p }}
+            <input type="hidden" name="form_name" value="{{ block.name }}">
+            <button type="submit">Ekle</button>
+          </form>
+
+          {% if block.items %}
+            <ul>
+              {% for item in block.items %}
+              <li>
+                <span>{{ item }}</span>
+                <form method="post" action="{% url 'delete_lookup' block.model_name item.id %}">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-delete">Sil</button>
+                </form>
+              </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>Henüz kayıt yok.</p>
+          {% endif %}
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</body>
+</html>

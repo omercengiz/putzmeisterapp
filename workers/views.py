@@ -6,6 +6,21 @@ from .models import Workers, ArchivedWorker
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
+from .lookups import Group, ShortClass, DirectorName, Currency, WorkClass, ClassName, Department, CostCenter
+from django.forms import modelform_factory
+
+
+lookup_models = {
+    "Group": Group,
+    "ShortClass": ShortClass,
+    "DirectorName": DirectorName,
+    "Currency": Currency,
+    "WorkClass": WorkClass,
+    "ClassName": ClassName,
+    "Department": Department,
+    "CostCenter": CostCenter,
+}
+
 
 
 # Create your views here.
@@ -98,3 +113,39 @@ def deleteWorkers(request, id):
     worker.delete()
     messages.success(request, "Worker deleted and archived.")
     return redirect("workers:dashboard")
+
+def manage_lookups(request):
+    forms_and_items = []
+
+    for name, model in lookup_models.items():
+        form_class = modelform_factory(model, fields="__all__")
+        form = form_class(prefix=name)
+        items = model.objects.all()
+        forms_and_items.append({
+            "name": name,
+            "form": form,
+            "items": items,
+            "model_name": model.__name__
+        })
+
+    if request.method == "POST":
+        form_name = request.POST.get("form_name")
+        model = lookup_models.get(form_name)
+        form_class = modelform_factory(model, fields="__all__")
+        form = form_class(request.POST, prefix=form_name)
+        if form.is_valid():
+            form.save()
+            return redirect("manage_lookups")
+
+    return render(request, "lookups/manage_lookups.html", {
+        "forms_and_items": forms_and_items,
+    })
+
+def delete_lookup(request, model_name, pk):
+    model = lookup_models.get(model_name)
+    if not model:
+        return redirect("manage_lookups")
+
+    obj = get_object_or_404(model, pk=pk)
+    obj.delete()
+    return redirect("manage_lookups")

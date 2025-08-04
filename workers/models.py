@@ -2,6 +2,10 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
+from .lookups import (
+    Group, ShortClass, DirectorName, Currency,
+    WorkClass, ClassName, Department, CostCenter
+)
 
 class BaseWorker(models.Model):
     GROUP_CHOICES = [
@@ -215,18 +219,19 @@ class BaseWorker(models.Model):
 
 
     author = models.ForeignKey(User, on_delete=models.SET_DEFAULT, default=1)
-    group = models.CharField(max_length=50, choices=GROUP_CHOICES, verbose_name="Group")
+    group = models.ForeignKey(Group, on_delete=models.SET_NULL, null=True, verbose_name="Group")
     sicil_no = models.CharField(max_length=50, verbose_name="Sicil No", unique=True)
-    s_no = models.CharField(max_length=50, choices=COST_CENTER_CHOICES, verbose_name="Cost Center")
-    department_short_name = models.CharField(max_length=100, choices=DIRECTOR_NAME, verbose_name="Directorships")
-    department = models.CharField(max_length=100, choices=DEPARTMENT_CLASS, verbose_name="Department")
-    short_class = models.CharField(max_length=50, choices=SHORT_CLASS_CHOICES, verbose_name="Status")
+    short_class = models.ForeignKey(ShortClass, on_delete=models.SET_NULL, null=True, verbose_name="Status")
+    department_short_name = models.ForeignKey(DirectorName, on_delete=models.SET_NULL, null=True, verbose_name="Directorships")
+    currency = models.ForeignKey(Currency, on_delete=models.SET_NULL, null=True)
+    work_class = models.ForeignKey(WorkClass, on_delete=models.SET_NULL, null=True)
+    class_name = models.ForeignKey(ClassName, on_delete=models.SET_NULL, null=True)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, verbose_name="Department")
+    s_no = models.ForeignKey(CostCenter, on_delete=models.SET_NULL, null=True, verbose_name="CostCenter")
     name_surname = models.CharField(max_length=100)
     date_of_recruitment = models.DateTimeField()
-    work_class = models.CharField(max_length=50, choices=WORK_CLASS_CHOICES)
-    class_name = models.CharField(max_length=50, choices=CLASS_CHOICES)
     gross_payment = models.DecimalField(max_digits=15, decimal_places=2)
-    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default='TRY')
+    
     bonus = models.IntegerField(validators=[
         MinValueValidator(0),
         MaxValueValidator(100)
