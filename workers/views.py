@@ -24,6 +24,7 @@ lookup_models = {
 
 
 # Create your views here.
+@login_required
 def index(request):
     return render(request, "index.html")
 
@@ -35,9 +36,9 @@ def detail(request, id):
 def dashboard(request):
     query = request.GET.get("q")
     if query:
-        workers = Workers.objects.filter(author=request.user, sicil_no__iexact=query)
+        workers = Workers.objects.filter(sicil_no__iexact=query)
     else:
-        workers = Workers.objects.filter(author=request.user)
+        workers = Workers.objects.all()
     
     paginator = Paginator(workers, 5)  
     page_number = request.GET.get("page")

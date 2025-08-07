@@ -52,8 +52,8 @@ def loginUser(request):
 
 def logoutUser(request):
     logout(request)
-    messages.success(request, "You logged out successfully...")
-    return redirect("index")
+    #messages.success(request, "You logged out successfully...")
+    return redirect("user:login")
 
 
 def admin_required(view_func):
@@ -103,7 +103,7 @@ def create_user(request):
 
 @admin_required
 def user_permission_dashboard(request):
-    users = User.objects.all()
+    users = User.objects.all().order_by("id")
     form = CreateUserForm()
     return render(request, 'user_permission_dashboard.html', {
         'users': users,
