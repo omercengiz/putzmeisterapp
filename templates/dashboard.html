@@ -21,7 +21,6 @@
 <table class="table">
     <thead>
       <tr>
-        <th scope="col">id</th>
         <th scope="col">Sicil.No</th>
         <th scope="col">Name Surname</th>
         <th scope="col">Date of Recruitment</th>
@@ -40,13 +39,12 @@
     <tbody>
         {% for worker in page_obj %}
         <tr>
-            <th scope="row">{{worker.id}}</th>
             <td>{{worker.sicil_no}}</td>
             <td>{{worker.name_surname}}</td>
             <td>{{worker.date_of_recruitment|date:"d.m.Y"}}</td>
             <td>{{worker.group}}</td>
             <td>{{worker.department_short_name}}</td>
-            <td>{{worker.s_no}}</td>
+            <td>{{worker.s_no.code}}</td>
             <td>{{worker.department}}</td>
             <td>{{worker.short_class}}</td>
             <td>{{worker.work_class}}</td>
