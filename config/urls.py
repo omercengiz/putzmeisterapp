@@ -24,6 +24,7 @@ urlpatterns = [
     path('', index, name="index"),
     path('workers/', include("workers.urls")),
     path('user/', include("user.urls")),
+    path('benefits/', include('benefits.urls')),
     path("lookups/", manage_lookups, name="manage_lookups"),
     path("lookups/delete/<str:model_name>/<int:pk>/", delete_lookup, name="delete_lookup")
 ]
