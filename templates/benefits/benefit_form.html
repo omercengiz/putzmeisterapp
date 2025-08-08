@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+{% load crispy_forms_tags %}
+
+{% block body %}
+<div class="row">
+    <div class="col-md-10 offset-md-1"> 
+
+        <h3>Add New Benefits</h3>
+        <hr>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    {{ form.worker|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.yurtici_harcirah|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.yurtdisi_harcirah|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.yol_yardimi|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.yemek_ticket|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.dogum_yardimi|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    {{ form.evlenme_yardimi|as_crispy_field }}
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end mt-3">
+                <a href="{% url 'benefits:list' %}" class="btn btn-secondary me-2">Cancel</a>
+                <button type="submit" class="btn btn-success">Save</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endblock %}

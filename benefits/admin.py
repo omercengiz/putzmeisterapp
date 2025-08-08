@@ -3,5 +3,9 @@ from .models import Benefit
 
 @admin.register(Benefit)
 class BenefitAdmin(admin.ModelAdmin):
-    list_display = ["sicil_no", "name_surname", "job_start_date", "department", "gross_salary"]
-    search_fields = ["sicil_no", "name_surname"]
+    list_display = (
+        'worker', 'name_surname', 'cost_center_id', 'group_name',
+        'yurtici_harcirah', 'yurtdisi_harcirah', 'yol_yardimi',
+        'yemek_ticket', 'dogum_yardimi', 'evlenme_yardimi'
+    )
+    search_fields = ('worker__sicil_no', 'worker__name_surname')

@@ -2,13 +2,29 @@ from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 from .forms import WorkersForm
 from django.core.paginator import Paginator
 from django.contrib import messages
-from .models import Workers
+from .models import Workers, ArchivedWorker
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
+from .lookups import Group, ShortClass, DirectorName, Currency, WorkClass, ClassName, Department, CostCenter
+from django.forms import modelform_factory
+
+
+lookup_models = {
+    "Group": Group,
+    "ShortClass": ShortClass,
+    "DirectorName": DirectorName,
+    "Currency": Currency,
+    "WorkClass": WorkClass,
+    "ClassName": ClassName,
+    "Department": Department,
+    "CostCenter": CostCenter,
+}
+
 
 
 # Create your views here.
+@login_required
 def index(request):
     return render(request, "index.html")
 
@@ -20,9 +36,9 @@ def detail(request, id):
 def dashboard(request):
     query = request.GET.get("q")
     if query:
-        workers = Workers.objects.filter(author=request.user, sicil_no__iexact=query)
+        workers = Workers.objects.filter(sicil_no__iexact=query)
     else:
-        workers = Workers.objects.filter(author=request.user)
+        workers = Workers.objects.all()
     
     paginator = Paginator(workers, 5)  
     page_number = request.GET.get("page")
@@ -75,7 +91,62 @@ def updateWorkers(request, id):
 @login_required(login_url="user:login")
 def deleteWorkers(request, id):
     worker = get_object_or_404(Workers, id=id)
-    worker.delete()
-    messages.success(request, "Information of the worker has been deleted")
 
+    ArchivedWorker.objects.create(
+        original_id=worker.id,
+        created_date=worker.created_date,
+        author=worker.author,
+        group=worker.group,
+        sicil_no=worker.sicil_no,
+        s_no=worker.s_no,
+        department_short_name=worker.department_short_name,
+        department=worker.department,
+        short_class=worker.short_class,
+        name_surname=worker.name_surname,
+        date_of_recruitment=worker.date_of_recruitment,
+        work_class=worker.work_class,
+        class_name=worker.class_name,
+        gross_payment=worker.gross_payment,
+        currency=worker.currency,
+        bonus=worker.bonus
+    )
+
+    worker.delete()
+    messages.success(request, "Worker deleted and archived.")
     return redirect("workers:dashboard")
+
+def manage_lookups(request):
+    forms_and_items = []
+
+    for name, model in lookup_models.items():
+        form_class = modelform_factory(model, fields="__all__")
+        form = form_class(prefix=name)
+        items = model.objects.all()
+        forms_and_items.append({
+            "name": name,
+            "form": form,
+            "items": items,
+            "model_name": model.__name__
+        })
+
+    if request.method == "POST":
+        form_name = request.POST.get("form_name")
+        model = lookup_models.get(form_name)
+        form_class = modelform_factory(model, fields="__all__")
+        form = form_class(request.POST, prefix=form_name)
+        if form.is_valid():
+            form.save()
+            return redirect("manage_lookups")
+
+    return render(request, "lookups/manage_lookups.html", {
+        "forms_and_items": forms_and_items,
+    })
+
+def delete_lookup(request, model_name, pk):
+    model = lookup_models.get(model_name)
+    if not model:
+        return redirect("manage_lookups")
+
+    obj = get_object_or_404(model, pk=pk)
+    obj.delete()
+    return redirect("manage_lookups")

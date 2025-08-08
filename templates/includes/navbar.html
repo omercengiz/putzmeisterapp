@@ -9,19 +9,26 @@
     
     <div class="collapse navbar-collapse" id="navbarCollapse">
       <ul class="navbar-nav me-auto mb-2 mb-md-0">
-        <li class="nav-item">
-          <a class="nav-link active" href="/">Ücretler</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link active" href="/yanhaklar">Yan Haklar</a>
-        </li>
+        {% if request.user.is_authenticated %}
+          <li class="nav-item">
+            <a class="nav-link active" href="/workers/dashboard">Workers</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="/benefits/">Benefits</a>
+          </li>
+        {% endif %}
+        {% if request.user.is_authenticated and request.user.is_superuser or request.user.is_authenticated and request.user.role_info.role == 'admin' %}
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'user:user_permission_dashboard' %}">Authorization Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'manage_lookups' %}">Lookup Management</a>
+          </li>
+        {% endif %}
       </ul>
 
       <ul class="navbar-nav ms-auto mb-2 mb-md-0">
         {% if request.user.is_authenticated %}
-          <li class="nav-item">
-            <a class="nav-link active" href="/workers/dashboard">Dashboard</a>
-          </li>
           <li class="nav-item">
             <a class="nav-link active" href="/user/logout">Logout</a>
           </li>

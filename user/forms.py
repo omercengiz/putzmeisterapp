@@ -1,4 +1,24 @@
 from django import forms
+from django.contrib.auth.models import User
+from user.models import UserRole
+
+
+class CreateUserForm(forms.ModelForm):
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': 'form-control'})
+    )
+    role = forms.ChoiceField(
+        choices=UserRole.ROLE_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
 
 class LoginForm(forms.Form):
     username = forms.CharField(
@@ -55,3 +75,4 @@ class RegisterForm(forms.Form):
         }
 
         return values
+    
