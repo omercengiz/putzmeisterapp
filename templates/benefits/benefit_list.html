@@ -1,0 +1,81 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<h3>Benefits Dashboard</h3>
+<hr>
+
+<div class="row mb-3 align-items-center">
+  <div class="col-md-6">
+    <form method="get" class="d-flex">
+      <input type="text" name="q" class="form-control me-2" placeholder="Sicil No veya İsim"
+             value="{{ query|default_if_none:'' }}" style="max-width:280px;">
+      <button type="submit" class="btn btn-primary me-2">Search</button>
+      <a href="{% url 'benefits:list' %}" class="btn btn-secondary">Clear</a>
+    </form>
+  </div>
+  <div class="col-md-6 text-end">
+    <a class="btn btn-success" href="{% url 'benefits:create' %}">+ New</a>
+  </div>
+</div>
+
+<table class="table table-bordered table-hover">
+  <thead class="table-light">
+    <tr>
+      <th>Sicil No</th>
+      <th>Ad Soyad</th>
+      <th>Cost Center (ID)</th>
+      <th>Group</th>
+      <th>Yurt içi</th>
+      <th>Yurt dışı</th>
+      <th>Yol</th>
+      <th>Yemek</th>
+      <th>Doğum</th>
+      <th>Evlenme</th>
+      <th style="width:140px;">İşlem</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for b in page_obj %}
+    <tr>
+      <td>{{ b.worker.sicil_no }}</td>
+      <td>{{ b.worker.name_surname }}</td>
+      <td>{{ b.worker.s_no.code }}</td>
+      <td>{{ b.worker.group }}</td>
+      <td>{{ b.yurtici_harcirah }}</td>
+      <td>{{ b.yurtdisi_harcirah }}</td>
+      <td>{{ b.yol_yardimi }}</td>
+      <td>{{ b.yemek_ticket }}</td>
+      <td>{{ b.dogum_yardimi }}</td>
+      <td>{{ b.evlenme_yardimi }}</td>
+      <td class="text-nowrap">
+        <div class="d-flex justify-content-start gap-2">
+          <a href="{% url 'benefits:update' b.id %}" class="btn btn-sm btn-primary">Update</a>
+          <a href="{% url 'benefits:delete' b.id %}" class="btn btn-sm btn-danger"
+            onclick="return confirm('Bu yan hak kaydını silmek istediğinize emin misiniz?');">Delete</a>
+        </div>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="11" class="text-center text-muted">Kayıt bulunamadı.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<nav aria-label="Sayfalama">
+  <ul class="pagination justify-content-center">
+    {% if page_obj.has_previous %}
+      <li class="page-item"><a class="page-link" href="?page=1{% if query %}&q={{query}}{% endif %}">&laquo; First</a></li>
+      <li class="page-item"><a class="page-link" href="?page={{page_obj.previous_page_number}}{% if query %}&q={{query}}{% endif %}">Previous</a></li>
+    {% endif %}
+
+    <li class="page-item active">
+      <span class="page-link">Sayfa {{page_obj.number}} / {{page_obj.paginator.num_pages}}</span>
+    </li>
+
+    {% if page_obj.has_next %}
+      <li class="page-item"><a class="page-link" href="?page={{page_obj.next_page_number}}{% if query %}&q={{query}}{% endif %}">Next</a></li>
+      <li class="page-item"><a class="page-link" href="?page={{page_obj.paginator.num_pages}}{% if query %}&q={{query}}{% endif %}">Last &raquo;</a></li>
+    {% endif %}
+  </ul>
+</nav>
+{% endblock %}
