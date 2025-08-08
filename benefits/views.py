@@ -13,7 +13,7 @@ def benefit_list(request):
     qs = Benefit.objects.select_related('worker', 'worker__group', 'worker__s_no').all()
 
     if q:
-        # sicil_no veya isimden ara
+        # sicil_no veya isimden arasın 
         qs = qs.filter(worker__sicil_no__icontains=q) | qs.filter(worker__name_surname__icontains=q)
 
     qs = qs.order_by('worker__sicil_no')
@@ -35,7 +35,7 @@ def benefit_create(request):
             messages.success(request, "Yan hak kaydı oluşturuldu.")
             return redirect('benefits:list')
         except IntegrityError:
-            # OneToOne ihlali (aynı worker için zaten kayıt var)
+            # OneToOne 
             form.add_error('worker', 'Bu çalışan için zaten bir yan hak kaydı var.')
     return render(request, 'benefits/benefit_form.html', {'form': form, 'title': 'Yeni Yan Hak'})
 

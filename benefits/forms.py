@@ -4,7 +4,7 @@ from .models import Benefit
 from workers.models import Workers
 
 class BenefitForm(forms.ModelForm):
-    # Worker seçimi: sicil_no üzerinden (OneToOne)
+    # Worker choice (OneToOne)
     worker = forms.ModelChoiceField(
         queryset=Workers.objects.all().order_by('sicil_no'),
         to_field_name='sicil_no',
