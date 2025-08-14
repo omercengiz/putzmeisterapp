@@ -2,8 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from .forms import RegisterForm, LoginForm, CreateUserForm
 from django.contrib import messages
 from django.contrib.auth.models import User
-from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import login, authenticate, logout, get_user_model
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from .models import UserRole
 
 
@@ -127,3 +128,27 @@ def user_permission_dashboard(request):
         'users': users,
         'create_user_form': form
     })
+
+
+
+@login_required
+@admin_required
+@require_POST
+def delete_user(request, user_id):
+    User = get_user_model()
+    target = get_object_or_404(User, pk=user_id)
+
+    # Kendini silme koruması yarattık bu önemli 
+    if target.id == request.user.id:
+        messages.error(request, "You cannot delete your own account.")
+        return redirect('user:user_permission_dashboard')
+
+    # Süper kullanıcıyı ancak süper kullanıcı silebilsin (opsiyonel ama iyi pratik)
+    if target.is_superuser and not request.user.is_superuser:
+        messages.error(request, "Admin users can only be deleted by other admins.")
+        return redirect('user:user_permission_dashboard')
+
+    # Sil ve rol kaydını otomatik cascadeliyorsa ekstra işleme gerek yok
+    target.delete()
+    messages.success(request, f"'{target.username}' user deleted successfully.")
+    return redirect('user:user_permission_dashboard')

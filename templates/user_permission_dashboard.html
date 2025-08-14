@@ -73,29 +73,38 @@
       <td>{{ user.email }}</td>
       <td>{{ user.role_info.role|default:"viewer" }}</td>
       <td>
-        <form method="post" action="{% url 'user:update_user_role' user.id %}" class="d-inline">
-          {% csrf_token %}
-          <div class="d-flex align-items-center gap-2">
-            <select name="role" class="form-select form-select-sm w-auto">
-              <option value="admin"  {% if user.role_info.role == "admin" %}selected{% endif %}>Admin</option>
-              <option value="editor" {% if user.role_info.role == "editor" %}selected{% endif %}>Editor</option>
-              <option value="viewer" {% if user.role_info.role == "viewer" or not user.role_info %}selected{% endif %}>Viewer</option>
-            </select>
+        <div class="d-flex align-items-center gap-2">
+          <form method="post" action="{% url 'user:update_user_role' user.id %}" class="d-inline">
+            {% csrf_token %}
+            <div class="d-flex align-items-center gap-2">
+              <select name="role" class="form-select form-select-sm w-auto">
+                <option value="admin"  {% if user.role_info.role == "admin" %}selected{% endif %}>Admin</option>
+                <option value="editor" {% if user.role_info.role == "editor" %}selected{% endif %}>Editor</option>
+                <option value="viewer" {% if user.role_info.role == "viewer" or not user.role_info %}selected{% endif %}>Viewer</option>
+              </select>
 
-            <button class="btn btn-sm btn-primary" type="submit">Save</button>
-            <button type="button"
-                    class="btn btn-sm btn-warning open-update-modal"
-                    data-bs-toggle="modal"
-                    data-bs-target="#addUserModal"
-                    data-user-id="{{ user.id }}"
-                    data-username="{{ user.username }}"
-                    data-email="{{ user.email }}"
-                    data-role="{{ user.role_info.role|default:'viewer' }}">
-              Update
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-danger" disabled>Reset Password</button>
-          </div>
-        </form>
+              <button class="btn btn-sm btn-primary" type="submit">Save</button>
+              <button type="button"
+                      class="btn btn-sm btn-warning open-update-modal"
+                      data-bs-toggle="modal"
+                      data-bs-target="#addUserModal"
+                      data-user-id="{{ user.id }}"
+                      data-username="{{ user.username }}"
+                      data-email="{{ user.email }}"
+                      data-role="{{ user.role_info.role|default:'viewer' }}">
+                Update
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-danger" disabled>Reset Password</button>
+            </div>
+          </form>
+          <form method="post"
+              action="{% url 'user:delete_user' user.id %}"
+              class="m-0"
+              onsubmit="return confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </div>
       </td>
     </tr>
     {% endfor %}

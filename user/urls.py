@@ -13,5 +13,6 @@ urlpatterns = [
     path('logout/', views.logoutUser, name="logout"),
     path('permissions/', user_permission_dashboard, name='user_permission_dashboard'),
     path('permissions/<int:user_id>/update/', update_user_role, name='update_user_role'),
-    path('permissions/create/', create_user, name='create_user')
+    path('permissions/create/', create_user, name='create_user'),
+    path('permissions/<int:user_id>/delete/', views.delete_user, name='delete_user'),
 ]
