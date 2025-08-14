@@ -2,11 +2,18 @@
 
 {% block body %}
 <div class="container py-5">
-  <h3 class="mb-5">Lookup Yönetimi</h3>
+  <!-- Başlık + Sağ üstte toplu aç/kapat butonu -->
+  <div class="d-flex justify-content-between align-items-center mb-5">
+    <h3 class="mb-0">Lookup Management</h3>
+    <button id="toggle-all" type="button" class="btn btn-outline-secondary btn-sm">
+      Collapse all
+    </button>
+  </div>
 
   {% for block in forms_and_items %}
     <div class="card mb-4 border-0 shadow-sm rounded-3 bg-white">
-      <div class="card-header bg-light d-flex justify-content-between align-items-center toggle-header" style="cursor: pointer; padding: 1rem 1.25rem;">
+      <div class="card-header bg-light d-flex justify-content-between align-items-center toggle-header"
+           style="cursor: pointer; padding: 1rem 1.25rem;">
         <div class="fw-semibold text-dark">{{ block.name }}</div>
         <div class="toggle-icon fs-5 text-success">▼</div>
       </div>
@@ -19,7 +26,7 @@
           </div>
           <div class="col-md-2 text-end">
             <input type="hidden" name="form_name" value="{{ block.name }}">
-            <button type="submit" class="btn btn-success w-100">Ekle</button>
+            <button type="submit" class="btn btn-success w-100">Add</button>
           </div>
         </form>
 
@@ -30,13 +37,13 @@
                 {{ item }}
                 <form method="post" action="{% url 'delete_lookup' block.model_name item.id %}" style="margin: 0;">
                   {% csrf_token %}
-                  <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
+                  <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                 </form>
               </li>
             {% endfor %}
           </ul>
         {% else %}
-          <div class="text-muted">Henüz kayıt yok.</div>
+          <div class="text-muted">There is no record</div>
         {% endif %}
       </div>
     </div>
@@ -44,29 +51,47 @@
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const toggles = document.querySelectorAll('.toggle-header');
+document.addEventListener('DOMContentLoaded', function () {
+  const toggles = document.querySelectorAll('.toggle-header');
+  const toggleAllBtn = document.getElementById('toggle-all');
 
+  toggles.forEach(header => {
+    const body = header.nextElementSibling;
+    const icon = header.querySelector('.toggle-icon');
+
+    // Varsayılan: hepsi kapalı
+    body.classList.add('d-none');
+    icon.textContent = '▼';
+
+    header.addEventListener('click', () => {
+      const isOpen = !body.classList.contains('d-none');
+      body.classList.toggle('d-none');
+      icon.textContent = isOpen ? '▼' : '▲';
+    });
+  });
+
+  // Toplu aç/kapat
+  function anyOpen() {
+    return Array.from(toggles).some(h => !h.nextElementSibling.classList.contains('d-none'));
+  }
+
+  toggleAllBtn.addEventListener('click', () => {
+    const shouldOpen = !anyOpen();
     toggles.forEach(header => {
       const body = header.nextElementSibling;
       const icon = header.querySelector('.toggle-icon');
-      const blockName = body.id.replace('body-', '');
-
-      // Sayfa yüklendiğinde accordion açık mı kontrol et
-      const isOpenStored = localStorage.getItem('accordion_' + blockName) === 'true';
-      if (isOpenStored) {
+      if (shouldOpen) {
         body.classList.remove('d-none');
         icon.textContent = '▲';
+      } else {
+        body.classList.add('d-none');
+        icon.textContent = '▼';
       }
-
-      // Tıklanınca accordion'u aç/kapat ve durumu kaydet
-      header.addEventListener('click', () => {
-        const isOpen = !body.classList.contains('d-none');
-        body.classList.toggle('d-none');
-        icon.textContent = isOpen ? '▼' : '▲';
-        localStorage.setItem('accordion_' + blockName, !isOpen);
-      });
     });
+    toggleAllBtn.textContent = shouldOpen ? 'Collapse all' : 'Expand all';
   });
+
+  toggleAllBtn.textContent = 'Expand all';
+});
 </script>
 {% endblock %}
