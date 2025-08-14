@@ -1,11 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import RegisterForm, LoginForm
+from .forms import RegisterForm, LoginForm, CreateUserForm
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from .models import UserRole
-from .forms import CreateUserForm
 
 
 # Create your views here.
@@ -84,21 +83,40 @@ def update_user_role(request, user_id):
 @admin_required
 def create_user(request):
     if request.method == 'POST':
-        form = CreateUserForm(request.POST)
+        user_id = request.POST.get('user_id')  # hidden input ile gelecek
+        user_obj = get_object_or_404(User, pk=user_id) if user_id else None
+
+        # instance varsa UPDATE, yoksa CREATE
+        form = CreateUserForm(request.POST, instance=user_obj)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.set_password(form.cleaned_data['password'])  # şifreyi hashle
-            user.save()
+            obj = form.save(commit=False)
+            # ToDO
+            # Parola: create'de zorunlu, update'te opsiyonel ama sonra bu kısmı regenerate password 
+            # veya invitation link ile yapabiliriz. Belli değil.
+            # reset butonu eklendi fakat henüz SMTP modülü eklenmedi.
+            password = form.cleaned_data.get('password')
+            if password:
+                obj.set_password(password)
 
-            # Role kaydını da oluştur
-            role = form.cleaned_data['role']
-            UserRole.objects.create(user=user, role=role)
+            obj.save()
 
-            messages.success(request, f"Kullanıcı '{user.username}' başarıyla oluşturuldu.")
+            role = form.cleaned_data.get('role')
+            if role and role in dict(UserRole.ROLE_CHOICES):
+                UserRole.objects.update_or_create(user=obj, defaults={'role': role})
+
+            if user_obj:
+                messages.success(request, "User updated successfully.")
+            else:
+                messages.success(request, f"Kullanıcı '{obj.username}' başarıyla oluşturuldu.")
+
             return redirect('user:user_permission_dashboard')
-    else:
-        form = CreateUserForm()
-    return render(request, 'user_create.html', {'form': form})
+
+        messages.error(request, "Lütfen hataları düzeltin.")
+        return redirect('user:user_permission_dashboard')
+
+    # GET yapıyoruz -> back to user_permission_dashboard
+    return redirect('user:user_permission_dashboard')
+
 
 
 @admin_required

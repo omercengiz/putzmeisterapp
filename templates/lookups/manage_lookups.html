@@ -2,7 +2,6 @@
 
 {% block body %}
 <div class="container py-5">
-  <!-- Başlık + Sağ üstte toplu aç/kapat butonu -->
   <div class="d-flex justify-content-between align-items-center mb-5">
     <h3 class="mb-0">Lookup Management</h3>
     <button id="toggle-all" type="button" class="btn btn-outline-secondary btn-sm">
@@ -59,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const body = header.nextElementSibling;
     const icon = header.querySelector('.toggle-icon');
 
-    // Varsayılan: hepsi kapalı
+    // deafult close all
     body.classList.add('d-none');
     icon.textContent = '▼';
 
@@ -70,7 +69,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // Toplu aç/kapat
+
   function anyOpen() {
     return Array.from(toggles).some(h => !h.nextElementSibling.classList.contains('d-none'));
   }
