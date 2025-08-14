@@ -94,16 +94,16 @@
                       data-role="{{ user.role_info.role|default:'viewer' }}">
                 Update
               </button>
-              <button type="button" class="btn btn-sm btn-outline-danger" disabled>Reset Password</button>
             </div>
           </form>
           <form method="post"
               action="{% url 'user:delete_user' user.id %}"
               class="m-0"
-              onsubmit="return confirm('Bu kullanıcıyı silmek istediğinize emin misiniz?');">
+              onsubmit="return confirm('Are you sure for deleting this user?');">
             {% csrf_token %}
             <button type="submit" class="btn btn-sm btn-danger">Delete</button>
           </form>
+          <button type="button" class="btn btn-sm btn-outline-danger" disabled>Reset Password</button>
         </div>
       </td>
     </tr>

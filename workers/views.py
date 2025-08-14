@@ -150,3 +150,26 @@ def delete_lookup(request, model_name, pk):
     obj = get_object_or_404(model, pk=pk)
     obj.delete()
     return redirect("manage_lookups")
+
+
+from django.shortcuts import get_object_or_404, redirect
+from django.apps import apps
+
+def update_lookup(request, model_name, pk):
+    Model = apps.get_model(app_label='workers', model_name=model_name)
+    obj = get_object_or_404(Model, pk=pk)
+
+    if request.method == 'POST':
+        for field, value in request.POST.items():
+            if field.endswith('-csrfmiddlewaretoken') or field == 'csrfmiddlewaretoken':
+                continue
+            # Örn: 'CostCenter-code' veya 'Department-name'
+            if '-' in field:
+                _, real_field = field.split('-', 1)
+                if hasattr(obj, real_field):
+                    setattr(obj, real_field, value)
+        obj.save()
+        return redirect('manage_lookups')  # burası önemli
+
+    # GET istekleri için de redirect et
+    return redirect('manage_lookups')
