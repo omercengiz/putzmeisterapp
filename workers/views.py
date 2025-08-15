@@ -9,6 +9,7 @@ from django.db import IntegrityError
 from .lookups import Group, ShortClass, DirectorName, Currency, WorkClass, ClassName, Department, CostCenter
 from django.forms import modelform_factory
 from django.views.decorators.http import require_POST
+from django.apps import apps
 
 lookup_models = {
     "Group": Group,
@@ -160,9 +161,6 @@ def delete_lookup(request, model_name, pk):
     obj.delete()
     return redirect("manage_lookups")
 
-
-from django.shortcuts import get_object_or_404, redirect
-from django.apps import apps
 
 def update_lookup(request, model_name, pk):
     Model = apps.get_model(app_label='workers', model_name=model_name)
