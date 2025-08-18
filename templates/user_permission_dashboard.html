@@ -3,40 +3,51 @@
 {% block body %}
 <h3>User Permissions</h3>
 <hr>
-<!-- Add User Modal Trigger -->
+
+<!-- User Modal Trigger -->
 <div class="mb-3 text-end">
-  <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal">
+  <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal" id="openCreateModal">
     + Add User
   </button>
 </div>
 
-<!-- Add User Modal -->
+<!-- User Modal (Create + Update) -->
 <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content shadow">
       <div class="modal-header bg-success text-white">
-        <h5 class="modal-title" id="addUserModalLabel">Yeni Kullanıcı Oluştur</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+        <h5 class="modal-title" id="addUserModalLabel">Create a new user</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
       </div>
       <div class="modal-body">
         <form method="post" action="{% url 'user:create_user' %}">
           {% csrf_token %}
+          <!-- UPDATE için gerekli gizli alan -->
+          <input type="hidden" name="user_id" id="id_user_id">
+
           <div class="mb-3">
             <label for="id_username" class="form-label">Username</label>
             {{ create_user_form.username }}
           </div>
+
           <div class="mb-3">
             <label for="id_email" class="form-label">E-mail</label>
             {{ create_user_form.email }}
           </div>
+
           <div class="mb-3">
             <label for="id_password" class="form-label">Password</label>
             {{ create_user_form.password }}
+            <div class="form-text" id="passwordHelp" style="display:none;">
+              Update işlemi için boş bırakabilirsiniz.
+            </div>
           </div>
+
           <div class="mb-3">
             <label for="id_role" class="form-label">Role</label>
             {{ create_user_form.role }}
           </div>
+
           <div class="d-flex justify-content-end">
             <button type="submit" class="btn btn-success">Save</button>
           </div>
@@ -62,20 +73,93 @@
       <td>{{ user.email }}</td>
       <td>{{ user.role_info.role|default:"viewer" }}</td>
       <td>
-        <form method="post" action="{% url 'user:update_user_role' user.id %}">
-        {% csrf_token %}
-        <div class="d-flex align-items-center">
-            <select name="role" class="form-select" style="width:150px;">
-            <option value="admin" {% if user.role_info.role == "admin" %}selected{% endif %}>Admin</option>
-            <option value="editor" {% if user.role_info.role == "editor" %}selected{% endif %}>Editor</option>
-            <option value="viewer" {% if user.role_info.role == "viewer" or not user.role_info %}selected{% endif %}>Viewer</option>
-            </select>
-            <button class="btn btn-sm btn-primary ms-2" type="submit">Save</button>
+        <div class="d-flex align-items-center gap-2">
+          <form method="post" action="{% url 'user:update_user_role' user.id %}" class="d-inline">
+            {% csrf_token %}
+            <div class="d-flex align-items-center gap-2">
+              <select name="role" class="form-select form-select-sm w-auto">
+                <option value="admin"  {% if user.role_info.role == "admin" %}selected{% endif %}>Admin</option>
+                <option value="editor" {% if user.role_info.role == "editor" %}selected{% endif %}>Editor</option>
+                <option value="viewer" {% if user.role_info.role == "viewer" or not user.role_info %}selected{% endif %}>Viewer</option>
+              </select>
+
+              <button class="btn btn-sm btn-primary" type="submit">Save</button>
+              <button type="button"
+                      class="btn btn-sm btn-warning open-update-modal"
+                      data-bs-toggle="modal"
+                      data-bs-target="#addUserModal"
+                      data-user-id="{{ user.id }}"
+                      data-username="{{ user.username }}"
+                      data-email="{{ user.email }}"
+                      data-role="{{ user.role_info.role|default:'viewer' }}">
+                Update
+              </button>
+            </div>
+          </form>
+          <form method="post"
+              action="{% url 'user:delete_user' user.id %}"
+              class="m-0"
+              onsubmit="return confirm('Are you sure for deleting this user?');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+          </form>
+          <button type="button" class="btn btn-sm btn-outline-danger" disabled>Reset Password</button>
         </div>
-        </form>
       </td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const modalEl = document.getElementById('addUserModal');
+  const form = modalEl.querySelector('form');
+  const modalTitle = document.getElementById('addUserModalLabel');
+  const header = modalEl.querySelector('.modal-header');
+
+  const inputUserId   = document.getElementById('id_user_id');
+  const inputUsername = document.getElementById('id_username');
+  const inputEmail    = document.getElementById('id_email');
+  const inputPassword = document.getElementById('id_password');
+  const selectRole    = document.getElementById('id_role');
+  const passwordHelp  = document.getElementById('passwordHelp');
+
+  // Create (Add User) -> temiz modal
+  const openCreate = document.getElementById('openCreateModal');
+  openCreate.addEventListener('click', function () {
+    modalTitle.textContent = 'Create a new user';
+    header.classList.remove('bg-primary');
+    header.classList.add('bg-success');
+
+    inputUserId.value = '';
+    if (inputUsername) inputUsername.value = '';
+    if (inputEmail)    inputEmail.value    = '';
+    if (inputPassword) inputPassword.value = '';
+    if (selectRole)    selectRole.value    = 'viewer';
+    if (passwordHelp)  passwordHelp.style.display = 'none';
+  });
+
+  // Update -> alanları doldur
+  document.querySelectorAll('.open-update-modal').forEach(btn => {
+    btn.addEventListener('click', function () {
+      modalTitle.textContent = 'Update User';
+      header.classList.remove('bg-success');
+      header.classList.add('bg-primary');
+
+      const uid   = this.dataset.userId || '';
+      const uname = this.dataset.username || '';
+      const email = this.dataset.email || '';
+      const role  = this.dataset.role || 'viewer';
+
+      inputUserId.value = uid;
+      if (inputUsername) inputUsername.value = uname;
+      if (inputEmail)    inputEmail.value    = email;
+      if (selectRole)    selectRole.value    = role;
+      if (inputPassword) inputPassword.value = ''; // güvenlik
+      if (passwordHelp)  passwordHelp.style.display = 'block';
+    });
+  });
+});
+</script>
 {% endblock %}

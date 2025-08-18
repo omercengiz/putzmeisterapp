@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from workers.views import index, manage_lookups, delete_lookup
+from workers.views import index, manage_lookups, delete_lookup, update_lookup
 
 
 urlpatterns = [
@@ -26,5 +26,7 @@ urlpatterns = [
     path('user/', include("user.urls")),
     path('benefits/', include('benefits.urls')),
     path("lookups/", manage_lookups, name="manage_lookups"),
-    path("lookups/delete/<str:model_name>/<int:pk>/", delete_lookup, name="delete_lookup")
+    path("lookups/delete/<str:model_name>/<int:pk>/", delete_lookup, name="delete_lookup"),
+    path("lookups/<str:model_name>/<int:pk>/update/", update_lookup, name="update_lookup"),
+
 ]
