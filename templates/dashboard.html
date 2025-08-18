@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% load l10n %}
 
 {% block body %}
 
@@ -25,7 +26,7 @@
         <th scope="col">Name Surname</th>
         <th scope="col">Date of Recruitment</th>
         <th scope="col">Group</th>
-        <th scope="col">Directorships</th>
+        <th scope="col">Director</th>
         <th scope="col">Cost Center</th>  
         <th scope="col">Department</th>
         <th scope="col">Short Class</th>
@@ -49,18 +50,53 @@
             <td>{{worker.short_class}}</td>
             <td>{{worker.work_class}}</td>
             <td>{{worker.class_name}}</td>
-            <td>{{worker.gross_payment}}</td>
+            <td>{{ worker.gross_payment|floatformat:2|localize }}</td>
             <td>{{worker.currency}}</td>
             <td>{{ worker.bonus }}</td>
             <td><a href="/workers/update/{{worker.id}}" class="btn btn-danger">Update</a></td>
             <td>
-              <a href="/workers/delete/{{worker.id}}" class="btn btn-danger"
-              onclick="return confirm('Bu çalışanı silmek istediğinize emin misiniz?');">Delete</a>
+              <button type="button"
+                      class="btn btn-danger open-delete-modal"
+                      data-bs-toggle="modal"
+                      data-bs-target="#deleteWorkerModal"
+                      data-worker-id="{{ worker.id }}"
+                      data-worker-name="{{ worker.name_surname }}">
+                Delete
+              </button>
             </td>
         </tr> 
         {% endfor %}
     </tbody>
 </table>
+
+<!-- Delete (Archived) Modal -->
+<div class="modal fade" id="deleteWorkerModal" tabindex="-1" aria-labelledby="deleteWorkerModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content shadow">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteWorkerModalLabel">Employee Quit</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        <form id="deleteWorkerForm" method="post" action="#">
+          {% csrf_token %}
+          <p id="deleteWorkerText" class="mb-3"></p>
+
+          <div class="mb-3">
+          <label for="exitDate" class="form-label">Quit Date</label>
+            <input type="date" class="form-control" id="exitDate" name="exit_date" required>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Discard</button>
+            <button type="submit" class="btn btn-danger">Delete Worker</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <!-- Pagination Controls -->
 <nav aria-label="Page navigation">
@@ -90,6 +126,29 @@
     {% endif %}
   </ul>
 </nav>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const modalEl = document.getElementById('deleteWorkerModal');
+  const formEl  = document.getElementById('deleteWorkerForm');
+  const textEl  = document.getElementById('deleteWorkerText');
+  const dateEl  = document.getElementById('exitDate');
+
+  document.querySelectorAll('.open-delete-modal').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const workerId = this.dataset.workerId;
+      const workerName = this.dataset.workerName || '';
+
+      formEl.setAttribute('action', `/workers/delete/${workerId}`);
+
+      textEl.textContent = `You are about to process the checkout for '${workerName}'. Please select the checkout date.`;
+
+      dateEl.value = '';
+    });
+  });
+});
+</script>
+
 
 {% if query and page_obj.paginator.count == 0 %}
   <div class="alert alert-warning mt-3 text-center mx-auto" style="max-width: 500px;" role="alert">

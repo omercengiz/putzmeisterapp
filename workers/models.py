@@ -255,6 +255,7 @@ class ArchivedWorker(BaseWorker):
     original_id = models.IntegerField()
     created_date = models.DateTimeField()
     deleted_at = models.DateTimeField(auto_now_add=True)
+    exit_date = models.DateField(null=True, blank=True) # İşçinin çıkış tarihi olacak
 
     class Meta:
         db_table = "archived_workers"

@@ -8,7 +8,8 @@ from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from .lookups import Group, ShortClass, DirectorName, Currency, WorkClass, ClassName, Department, CostCenter
 from django.forms import modelform_factory
-
+from django.views.decorators.http import require_POST
+from django.apps import apps
 
 lookup_models = {
     "Group": Group,
@@ -88,10 +89,16 @@ def updateWorkers(request, id):
         
     return render(request, "updateworkers.html", {"form": form})
 
+
 @login_required(login_url="user:login")
+@require_POST
 def deleteWorkers(request, id):
     worker = get_object_or_404(Workers, id=id)
 
+    # Modal formundan gelen çıkış tarihi (YYYY-MM-DD)
+    exit_date = request.POST.get('exit_date')
+
+    # Arşive eklerken çıkış tarihini de yaz
     ArchivedWorker.objects.create(
         original_id=worker.id,
         created_date=worker.created_date,
@@ -108,12 +115,15 @@ def deleteWorkers(request, id):
         class_name=worker.class_name,
         gross_payment=worker.gross_payment,
         currency=worker.currency,
-        bonus=worker.bonus
+        bonus=worker.bonus,
+        # 👇 ArchivedWorker modelinde bu alanın adı neyse onu kullan:
+        exit_date=exit_date  # ör: 'exit_date' / 'terminated_at'
     )
 
     worker.delete()
     messages.success(request, "Worker deleted and archived.")
     return redirect("workers:dashboard")
+
 
 def manage_lookups(request):
     forms_and_items = []
@@ -150,3 +160,23 @@ def delete_lookup(request, model_name, pk):
     obj = get_object_or_404(model, pk=pk)
     obj.delete()
     return redirect("manage_lookups")
+
+
+def update_lookup(request, model_name, pk):
+    Model = apps.get_model(app_label='workers', model_name=model_name)
+    obj = get_object_or_404(Model, pk=pk)
+
+    if request.method == 'POST':
+        for field, value in request.POST.items():
+            if field.endswith('-csrfmiddlewaretoken') or field == 'csrfmiddlewaretoken':
+                continue
+            # Örn: 'CostCenter-code' veya 'Department-name'
+            if '-' in field:
+                _, real_field = field.split('-', 1)
+                if hasattr(obj, real_field):
+                    setattr(obj, real_field, value)
+        obj.save()
+        return redirect('manage_lookups')  # burası önemli
+
+    # GET istekleri için de redirect et
+    return redirect('manage_lookups')

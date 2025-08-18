@@ -2,16 +2,23 @@
 
 {% block body %}
 <div class="container py-5">
-  <h3 class="mb-5">Lookup Yönetimi</h3>
+  <div class="d-flex justify-content-between align-items-center mb-5">
+    <h3 class="mb-0">Lookup Management</h3>
+    <button id="toggle-all" type="button" class="btn btn-outline-secondary btn-sm">
+      Collapse all
+    </button>
+  </div>
 
   {% for block in forms_and_items %}
     <div class="card mb-4 border-0 shadow-sm rounded-3 bg-white">
-      <div class="card-header bg-light d-flex justify-content-between align-items-center toggle-header" style="cursor: pointer; padding: 1rem 1.25rem;">
+      <div class="card-header bg-light d-flex justify-content-between align-items-center toggle-header"
+           style="cursor: pointer; padding: 1rem 1.25rem;">
         <div class="fw-semibold text-dark">{{ block.name }}</div>
         <div class="toggle-icon fs-5 text-success">▼</div>
       </div>
 
       <div class="card-body d-none bg-white rounded-bottom-3" id="body-{{ block.name }}">
+        <!-- Add Form -->
         <form method="post" class="row g-3 align-items-center mb-3">
           {% csrf_token %}
           <div class="col-md-10">
@@ -19,54 +26,160 @@
           </div>
           <div class="col-md-2 text-end">
             <input type="hidden" name="form_name" value="{{ block.name }}">
-            <button type="submit" class="btn btn-success w-100">Ekle</button>
+            <button type="submit" class="btn btn-success w-100">Add</button>
           </div>
         </form>
 
+        <!-- Items -->
         {% if block.items %}
           <ul class="list-group">
             {% for item in block.items %}
               <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ item }}
-                <form method="post" action="{% url 'delete_lookup' block.model_name item.id %}" style="margin: 0;">
-                  {% csrf_token %}
-                  <button type="submit" class="btn btn-sm btn-outline-danger">Sil</button>
-                </form>
+                <span>{{ item }}</span>
+
+                <div class="d-flex align-items-center gap-2 m-0">
+                  <!-- EDIT (modal) -->
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-warning open-edit-modal"
+                    data-bs-toggle="modal"
+                    data-bs-target="#editLookupModal"
+                    data-update-url="{% url 'update_lookup' block.model_name item.id %}"
+                    data-prefix="{{ block.model_name }}"
+                    data-field1="{% if block.model_name == 'CostCenter' %}code{% else %}{% for f in block.form %}{% if not f.is_hidden %}{% if forloop.first %}{{ f.name }}{% endif %}{% endif %}{% endfor %}{% endif %}"
+                    data-field2="{% if block.model_name == 'CostCenter' %}name{% else %}{% endif %}"
+                    data-value1="{% if block.model_name == 'CostCenter' %}{{ item.code }}{% else %}{{ item }}{% endif %}"
+                    data-value2="{% if block.model_name == 'CostCenter' %}{{ item.name }}{% else %}{% endif %}">
+                    Edit
+                  </button>
+
+                  <!-- DELETE -->
+                  <form method="post" action="{% url 'delete_lookup' block.model_name item.id %}" class="m-0">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                  </form>
+                </div>
               </li>
             {% endfor %}
           </ul>
         {% else %}
-          <div class="text-muted">Henüz kayıt yok.</div>
+          <div class="text-muted">There is no record</div>
         {% endif %}
       </div>
     </div>
   {% endfor %}
 </div>
 
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const toggles = document.querySelectorAll('.toggle-header');
+<!-- EDIT Modal -->
+<div class="modal fade" id="editLookupModal" tabindex="-1" aria-labelledby="editLookupModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content shadow">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="editLookupModalLabel">Edit Lookup</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editLookupForm" method="post" action="#">
+          {% csrf_token %}
 
+          
+          <div class="mb-3" id="groupField1">
+            <label for="editLookupField1" class="form-label">Field 1</label>
+            <input type="text" id="editLookupField1" class="form-control">
+          </div>
+
+          <div class="mb-3 d-none" id="groupField2">
+            <label for="editLookupField2" class="form-label">Field 2</label>
+            <input type="text" id="editLookupField2" class="form-control">
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Accordion
+  const toggles = document.querySelectorAll('.toggle-header');
+  const toggleAllBtn = document.getElementById('toggle-all');
+
+  toggles.forEach(header => {
+    const body = header.nextElementSibling;
+    const icon = header.querySelector('.toggle-icon');
+    body.classList.add('d-none');
+    icon.textContent = '▼';
+    header.addEventListener('click', () => {
+      const isOpen = !body.classList.contains('d-none');
+      body.classList.toggle('d-none');
+      icon.textContent = isOpen ? '▼' : '▲';
+    });
+  });
+
+  function anyOpen() {
+    return Array.from(toggles).some(h => !h.nextElementSibling.classList.contains('d-none'));
+  }
+
+  toggleAllBtn.addEventListener('click', () => {
+    const shouldOpen = !anyOpen();
     toggles.forEach(header => {
       const body = header.nextElementSibling;
       const icon = header.querySelector('.toggle-icon');
-      const blockName = body.id.replace('body-', '');
-
-      // Sayfa yüklendiğinde accordion açık mı kontrol et
-      const isOpenStored = localStorage.getItem('accordion_' + blockName) === 'true';
-      if (isOpenStored) {
+      if (shouldOpen) {
         body.classList.remove('d-none');
         icon.textContent = '▲';
+      } else {
+        body.classList.add('d-none');
+        icon.textContent = '▼';
       }
+    });
+    toggleAllBtn.textContent = shouldOpen ? 'Collapse all' : 'Expand all';
+  });
+  toggleAllBtn.textContent = 'Expand all';
 
-      // Tıklanınca accordion'u aç/kapat ve durumu kaydet
-      header.addEventListener('click', () => {
-        const isOpen = !body.classList.contains('d-none');
-        body.classList.toggle('d-none');
-        icon.textContent = isOpen ? '▼' : '▲';
-        localStorage.setItem('accordion_' + blockName, !isOpen);
-      });
+  // ===== Edit modal logic (single-field for all, two-fields for CostCenter) =====
+  const editForm   = document.getElementById('editLookupForm');
+  const field1Wrap = document.getElementById('groupField1');
+  const field2Wrap = document.getElementById('groupField2');
+  const input1     = document.getElementById('editLookupField1');
+  const input2     = document.getElementById('editLookupField2');
+
+  document.querySelectorAll('.open-edit-modal').forEach(btn => {
+    btn.addEventListener('click', function () {
+      const updateUrl = this.dataset.updateUrl;
+      const prefix    = this.dataset.prefix;   // model adı (prefix)
+      const field1    = this.dataset.field1;   // tek alanlı modellerde ilk alan adı
+      const field2    = this.dataset.field2;   // sadece CostCenter'da "name", aksi halde boş
+      const value1    = this.dataset.value1 || '';
+      const value2    = this.dataset.value2 || '';
+
+      // Form action
+      editForm.setAttribute('action', updateUrl);
+
+      // Field 1: her zaman aktif
+      input1.value = value1;
+      input1.setAttribute('name', `${prefix}-${field1}`);
+      field1Wrap.querySelector('label').textContent = (field1 || 'Field 1').replace(/_/g, ' ');
+
+      // Field 2: sadece CostCenter
+      if (field2) {
+        input2.value = value2;
+        input2.setAttribute('name', `${prefix}-${field2}`);
+        field2Wrap.classList.remove('d-none');
+        field2Wrap.querySelector('label').textContent = field2.replace(/_/g, ' ');
+      } else {
+        // field2 yoksa input2'yi pasifle
+        input2.value = '';
+        input2.removeAttribute('name');
+        field2Wrap.classList.add('d-none');
+      }
     });
   });
+});
 </script>
 {% endblock %}
