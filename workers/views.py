@@ -23,6 +23,11 @@ lookup_models = {
 }
 
 
+def is_sicil_no_exist(sicil_no: str) -> bool:
+    return (
+        Workers.objects.filter(sicil_no=sicil_no).exists()
+        or ArchivedWorker.objects.filter(sicil_no=sicil_no).exists()
+    )
 
 # Create your views here.
 @login_required
@@ -59,12 +64,17 @@ def AddWorkers(request):
     if form.is_valid():
         worker = form.save(commit=False)
         worker.author = request.user
-        try:
-            worker.save()
-            messages.success(request, "Member has been added successfully...")
-            return redirect("workers:dashboard")
-        except IntegrityError:
-            form.add_error("sicil_no", "This Sicil No already exists.")
+        sicil = worker.sicil_no
+
+        if is_sicil_no_exist(sicil):
+            form.add_error("sicil_no", "This Sicil No already exists in the system.")
+        else:
+            try:
+                worker.save()
+                messages.success(request, "Member has been added successfully...")
+                return redirect("workers:dashboard")
+            except IntegrityError:
+                form.add_error("sicil_no", "This Sicil No already exists.")
 
     return render(request, "addworkers.html", {"form": form})
 
@@ -78,9 +88,13 @@ def updateWorkers(request, id):
     if form.is_valid():
         updated_worker = form.save(commit=False)
         updated_worker.author = request.user
+        new_sicil = updated_worker.sicil_no
+
+        exists_workers = Workers.objects.exclude(id=worker.id).filter(sicil_no=new_sicil).exists()
+        exits_archived = ArchivedWorker.objects.filter(sicil_no=new_sicil).exists()
 
         # Aynı sicil_no başka bir kayıtla çakışıyor mu kontrolü
-        if Workers.objects.exclude(id=worker.id).filter(sicil_no=updated_worker.sicil_no).exists():
+        if exists_workers or exits_archived:
             form.add_error("sicil_no", "This Sicil No is already used by another worker.")
         else:
             updated_worker.save()

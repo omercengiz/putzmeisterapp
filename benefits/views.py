@@ -32,12 +32,12 @@ def benefit_create(request):
     if form.is_valid():
         try:
             form.save()
-            messages.success(request, "Yan hak kaydı oluşturuldu.")
+            messages.success(request, "Benefits created successfully.")
             return redirect('benefits:list')
         except IntegrityError:
             # OneToOne 
-            form.add_error('worker', 'Bu çalışan için zaten bir yan hak kaydı var.')
-    return render(request, 'benefits/benefit_form.html', {'form': form, 'title': 'Yeni Yan Hak'})
+            form.add_error('worker', 'There is already a benefit record for this employee.')
+    return render(request, 'benefits/benefit_form.html', {'form': form, 'title': 'New Benefit'})
 
 @login_required
 def benefit_update(request, pk):
@@ -46,15 +46,15 @@ def benefit_update(request, pk):
     if form.is_valid():
         try:
             form.save()
-            messages.success(request, "Yan hak bilgileri güncellendi.")
+            messages.success(request, "Information of Benefits updated successfully.")
             return redirect('benefits:list')
         except IntegrityError:
-            form.add_error('worker', 'Bu çalışan için zaten bir yan hak kaydı var.')
-    return render(request, 'benefits/benefit_form.html', {'form': form, 'title': 'Yan Hak Güncelle'})
+            form.add_error('worker', 'There is already a benefit record for this employee.')
+    return render(request, 'benefits/benefit_form.html', {'form': form, 'title': 'Update Benefit'})
 
 @login_required
 def benefit_delete(request, pk):
     benefit = get_object_or_404(Benefit, pk=pk)
     benefit.delete()
-    messages.success(request, "Yan hak kaydı silindi.")
+    messages.success(request, "Benefits deleted successfully.")
     return redirect('benefits:list')
