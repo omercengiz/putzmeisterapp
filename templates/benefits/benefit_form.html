@@ -5,7 +5,7 @@
 <div class="row">
     <div class="col-md-10 offset-md-1"> 
 
-        <h3>Add New Benefits</h3>
+        <h3>Benefit</h3>
         <hr>
 
         <form method="post" novalidate>
@@ -13,6 +13,10 @@
             <div class="row">
                 <div class="col-md-6 mb-3">
                     {{ form.worker|as_crispy_field }}
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    {{ form.period|as_crispy_field }}  
                 </div>
 
                 <div class="col-md-6 mb-3">

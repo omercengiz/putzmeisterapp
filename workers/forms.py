@@ -20,7 +20,7 @@ class WorkersForm(forms.ModelForm):
             "bonus"
         ]
         widgets = {
-            'date_of_recruitment': forms.DateInput(attrs={'type': 'date'})
+            'date_of_recruitment': forms.DateInput(format="%Y-%m-%d", attrs={'type': 'date'})
         }
 
     def __init__(self, *args, **kwargs):
