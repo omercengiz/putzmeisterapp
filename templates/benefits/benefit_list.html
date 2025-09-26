@@ -18,6 +18,13 @@
     </form>
   </div>
   <div class="col-md-6 text-end">
+    <a href="{% url 'benefits:bulk' %}"
+      class="btn me-2"
+      style="background:#6f42c1; border:1px solid #5a35a3; color:#f2efff; font-weight:600;"
+      onmouseover="this.style.backgroundColor='#5b36a3'; this.style.borderColor='#4f2f92'; this.style.color='#ffffff';"
+      onmouseout="this.style.backgroundColor='#6f42c1'; this.style.borderColor='#5a35a3'; this.style.color='#f2efff';">
+      Bulk Add/Update
+    </a>
     <a class="btn btn-success" href="{% url 'benefits:create' %}">+ New</a>
   </div>
 </div>
