@@ -1,8 +1,8 @@
 from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
-from .forms import WorkersForm
+from .forms import WorkersForm, GrossSalaryBulkForm, WorkerGrossMonthlyForm
 from django.core.paginator import Paginator
 from django.contrib import messages
-from .models import Workers, ArchivedWorker
+from .models import Workers, ArchivedWorker, WorkerGrossMonthly
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
@@ -10,6 +10,8 @@ from .lookups import Group, ShortClass, DirectorName, Currency, WorkClass, Class
 from django.forms import modelform_factory
 from django.views.decorators.http import require_POST
 from django.apps import apps
+import calendar
+import datetime
 
 lookup_models = {
     "Group": Group,
@@ -194,3 +196,87 @@ def update_lookup(request, model_name, pk):
 
     # GET istekleri için de redirect et
     return redirect('manage_lookups')
+
+
+def bulk_set_gross_salaries(request):
+    if request.method == "POST":
+        form = GrossSalaryBulkForm(request.POST)
+        # refresh=1 ise sadece formu yeniden göster (auto-prefill yapıldı)
+        if request.POST.get('refresh') == '1':
+            return render(request, "bulk_gross_salaries.html", {"form": form})
+
+        if form.is_valid():
+            worker = form.cleaned_data['worker']
+            year = form.cleaned_data['year']
+            months = form.cleaned_data['months']
+            gross_salary = form.cleaned_data['gross_salary']
+            overwrite = form.cleaned_data['overwrite_existing']
+
+            for m in months:
+                if overwrite:
+                    WorkerGrossMonthly.objects.update_or_create(
+                        worker=worker, year=year, month=m,
+                        defaults={'gross_salary': gross_salary},
+                    )
+                else:
+                    WorkerGrossMonthly.objects.get_or_create(
+                        worker=worker, year=year, month=m,
+                        defaults={'gross_salary': gross_salary},
+                    )
+
+            messages.success(request, f"{worker.sicil_no} ({worker.name_surname}) için kayıtlar güncellendi.")
+            return redirect("workers:list_worker_salaries", worker_id=worker.id)
+    else:
+        form = GrossSalaryBulkForm()
+
+    return render(request, "bulk_gross_salaries.html", {"form": form})
+
+
+
+def update_salary_record(request, salary_id):
+    salary = get_object_or_404(WorkerGrossMonthly, id=salary_id)
+    if request.method == "POST":
+        form = WorkerGrossMonthlyForm(request.POST, instance=salary)
+        if form.is_valid():
+            form.save()
+            return redirect("workers:list_worker_salaries", worker_id=salary.worker.id)
+    else:
+        form = WorkerGrossMonthlyForm(instance=salary)
+    return render(request, "update_salary.html", {"form": form, "salary": salary})
+
+
+
+def list_worker_salaries(request, worker_id):
+    worker = get_object_or_404(Workers, id=worker_id)
+    year = request.GET.get("year", datetime.date.today().year)
+
+    # O yıl için tüm maaş kayıtlarını al
+    salaries = WorkerGrossMonthly.objects.filter(worker=worker, year=year)
+    salaries_dict = {s.month: s for s in salaries}
+
+    # 1–12 ayları sırayla hazırla
+    months_data = []
+    for m in range(1, 12+1):
+        months_data.append({
+            "month": calendar.month_name[m],
+            "year": year,
+            "salary": salaries_dict.get(m)
+        })
+
+    return render(request, "worker_salary_list.html", {
+        "worker": worker,
+        "months_data": months_data,
+    })
+
+
+
+def delete_salary_record(request, salary_id):
+    """
+    Tek bir maaş kaydını siler.
+    """
+    salary = get_object_or_404(WorkerGrossMonthly, pk=salary_id)
+    worker_id = salary.worker.id
+    worker_name = salary.worker.name_surname
+    salary.delete()
+    messages.success(request, f"{worker_name} için maaş kaydı silindi.")
+    return redirect("workers:list_worker_salaries", worker_id=worker_id)

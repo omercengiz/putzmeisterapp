@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+{% load l10n %}
+
+{% block body %}
+<div class="container mt-4">
+  <h3 class="mb-4">Salary Details</h3>
+
+  <!-- Çalışan Bilgileri -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title">{{ worker.name_surname }}</h5>
+      <p class="mb-1"><strong>Sicil No:</strong> {{ worker.sicil_no }}</p>
+      <p class="mb-1"><strong>Tanımlı Gross Payment:</strong> {{ worker.gross_payment|floatformat:2|localize }}</p>
+      <p class="mb-0"><strong>Currency:</strong> {{ worker.currency }}</p>
+    </div>
+  </div>
+
+  <!-- Maaş Tablosu -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <table class="table table-striped align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th scope="col">Month</th>
+            <th scope="col">Year</th>
+            <th scope="col" class="text-end">Salary</th>
+            <th scope="col" class="text-center">Process</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in months_data %}
+          <tr>
+            <td>{{ row.month }}</td>
+            <td>{{ row.year|stringformat:"s" }}</td>
+            <td class="text-end">
+              {% if row.salary %}
+                {{ row.salary.gross_salary|floatformat:2|localize }}
+              {% else %}
+                –
+              {% endif %}
+            </td>
+            <td class="text-center">
+              {% if row.salary %}
+              <div class="d-flex justify-content-center gap-2">
+                <a href="{% url 'workers:update_salary_record' row.salary.id %}" 
+                   class="btn btn-sm btn-primary">Update</a>
+                <a href="{% url 'workers:delete_salary_record' row.salary.id %}" 
+                   class="btn btn-sm btn-danger">Delete</a>
+              </div>
+              {% else %}
+              <span class="text-muted">There is no salary for this month</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

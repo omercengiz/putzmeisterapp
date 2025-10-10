@@ -14,7 +14,8 @@
     </form>
   </div>
   <div class="col-md-6 text-end">
-    <a class="btn btn-danger" href="/workers/addworkers">Add a Member</a>
+    <a class="btn btn-danger" href="{% url 'workers:addworkers' %}">Add a Member</a>
+    <a class="btn btn-success" href="{% url 'workers:bulk_set_gross_salaries' %}">Bulk Add/Update</a>
   </div>
 </div>
 <hr>
@@ -35,6 +36,7 @@
         <th scope="col">Gross Payment</th>
         <th scope="col">Currency</th>
         <th scope="col">Bonus</th>
+        <th scope="col">Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -53,16 +55,24 @@
             <td>{{ worker.gross_payment|floatformat:2|localize }}</td>
             <td>{{worker.currency}}</td>
             <td>{{ worker.bonus }}</td>
-            <td><a href="/workers/update/{{worker.id}}" class="btn btn-danger">Update</a></td>
             <td>
-              <button type="button"
-                      class="btn btn-danger open-delete-modal"
-                      data-bs-toggle="modal"
-                      data-bs-target="#deleteWorkerModal"
-                      data-worker-id="{{ worker.id }}"
-                      data-worker-name="{{ worker.name_surname }}">
-                Delete
-              </button>
+              <div class="d-flex gap-2">
+                <!-- Update -->
+                <a href="{% url 'workers:updateworkers' worker.id %}" class="btn btn-danger btn-sm">Update</a>
+
+                <!-- Maaş Detayı -->
+                <a href="{% url 'workers:list_worker_salaries' worker.id %}" class="btn btn-danger btn-sm">Details</a>
+
+                <!-- Delete -->
+                <button type="button"
+                        class="btn btn-danger btn-sm open-delete-modal"
+                        data-bs-toggle="modal"
+                        data-bs-target="#deleteWorkerModal"
+                        data-worker-id="{{ worker.id }}"
+                        data-worker-name="{{ worker.name_surname }}">
+                  Delete
+                </button>
+              </div>
             </td>
         </tr> 
         {% endfor %}
@@ -83,7 +93,7 @@
           <p id="deleteWorkerText" class="mb-3"></p>
 
           <div class="mb-3">
-          <label for="exitDate" class="form-label">Quit Date</label>
+            <label for="exitDate" class="form-label">Quit Date</label>
             <input type="date" class="form-control" id="exitDate" name="exit_date" required>
           </div>
 
@@ -129,7 +139,6 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  const modalEl = document.getElementById('deleteWorkerModal');
   const formEl  = document.getElementById('deleteWorkerForm');
   const textEl  = document.getElementById('deleteWorkerText');
   const dateEl  = document.getElementById('exitDate');
@@ -140,9 +149,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const workerName = this.dataset.workerName || '';
 
       formEl.setAttribute('action', `/workers/delete/${workerId}`);
-
       textEl.textContent = `You are about to process the checkout for '${workerName}'. Please select the checkout date.`;
-
       dateEl.value = '';
     });
   });
