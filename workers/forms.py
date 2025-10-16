@@ -113,3 +113,14 @@ class WorkerGrossMonthlyForm(forms.ModelForm):
             "month": forms.NumberInput(attrs={"min": 1, "max": 12}),
             "gross_salary": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
         }
+
+class WorkerImportForm(forms.Form):
+    excel_file = forms.FileField(
+        label="Excel Dosyası",
+        widget=forms.ClearableFileInput(
+            attrs={
+                "class": "form-control",
+                "accept": ".xlsx",
+            }
+        )
+    )

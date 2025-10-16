@@ -1,9 +1,8 @@
 from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
-from .forms import WorkersForm, GrossSalaryBulkForm, WorkerGrossMonthlyForm
+from .forms import WorkersForm, GrossSalaryBulkForm, WorkerGrossMonthlyForm, WorkerImportForm
 from django.core.paginator import Paginator
 from django.contrib import messages
 from .models import Workers, ArchivedWorker, WorkerGrossMonthly
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from .lookups import Group, ShortClass, DirectorName, Currency, WorkClass, ClassName, Department, CostCenter
@@ -12,6 +11,10 @@ from django.views.decorators.http import require_POST
 from django.apps import apps
 import calendar
 import datetime
+import pandas as pd
+
+
+
 
 lookup_models = {
     "Group": Group,
@@ -280,3 +283,142 @@ def delete_salary_record(request, salary_id):
     salary.delete()
     messages.success(request, f"{worker_name} için maaş kaydı silindi.")
     return redirect("workers:list_worker_salaries", worker_id=worker_id)
+
+@login_required
+def import_workers(request):
+    if request.method == "POST":
+        form = WorkerImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            excel_file = form.cleaned_data["excel_file"]
+
+            try:
+                df = pd.read_excel(excel_file)
+
+                # column maplemesi
+                column_mapping = {
+                    "Group": "group",
+                    "Sicil No": "sicil_no",
+                    "CostCenter": "s_no",   
+                    "Directorships": "department_short_name",
+                    "Status": "short_class",
+                    "Name surname": "name_surname",
+                    "Date of recruitment": "date_of_recruitment",
+                    "Work class": "work_class",
+                    "Class name": "class_name",
+                    "Department": "department",
+                    "Gross payment": "gross_payment",
+                    "Currency": "currency",
+                    "Bonus": "bonus",
+                }
+
+                # normalize name of columns
+                df.rename(columns=lambda c: c.strip(), inplace=True)
+                df.rename(columns=column_mapping, inplace=True)
+
+                required_columns = list(column_mapping.values())
+                missing = [c for c in required_columns if c not in df.columns]
+                if missing:
+                    messages.error(
+                        request,
+                        f"❌ Excel dosyasında eksik kolon(lar) var → {', '.join(missing)}",
+                        extra_tags="danger"
+                    )
+                    return redirect("workers:import_workers")
+
+                # Lookup models
+                lookups = {
+                    "s_no": (CostCenter, "code"),
+                    "group": (Group, "name"),
+                    "short_class": (ShortClass, "name"),
+                    "department_short_name": (DirectorName, "name"),
+                    "currency": (Currency, "code"),
+                    "work_class": (WorkClass, "name"),
+                    "class_name": (ClassName, "name"),
+                    "department": (Department, "name"),
+                }
+
+                for index, row in df.iterrows():
+                    sicil_no = str(row["sicil_no"]).strip()
+
+                    # ✅ Date Check
+                    date_val = row.get("date_of_recruitment")
+                    if pd.isna(date_val) or date_val == "":
+                        messages.error(
+                            request,
+                            f"❌ {index+2}. satır (Sicil No: {sicil_no}) → 'date_of_recruitment' boş olamaz.",
+                            extra_tags="danger"
+                        )
+                        return redirect("workers:import_workers")
+
+                    if isinstance(date_val, str):
+                        try:
+                            date_val = datetime.datetime.strptime(date_val, "%Y-%m-%d")
+                        except ValueError:
+                            messages.error(
+                                request,
+                                f"❌ {index+2}. satır (Sicil No: {sicil_no}) → 'date_of_recruitment' formatı hatalı. "
+                                f"Beklenen format: YYYY-MM-DD (örnek: 2025-01-15).",
+                                extra_tags="danger"
+                            )
+                            return redirect("workers:import_workers")
+
+                    # ✅ Lookup confirm
+                    lookup_ids = {}
+                    for col, (Model, field) in lookups.items():
+                        val = row.get(col)
+                        if pd.isna(val) or val == "":
+                            messages.error(
+                                request,
+                                f"❌ {index+2}. satır (Sicil No: {sicil_no}) → '{col}' boş olamaz.",
+                                extra_tags="danger"
+                            )
+                            return redirect("workers:import_workers")
+
+                        obj = Model.objects.filter(**{field: val}).first()
+                        if not obj:
+                            messages.error(
+                                request,
+                                f"❌ {index+2}. satır (Sicil No: {sicil_no}) → '{col}' alanında girilen '{val}' "
+                                f"lookup tablosunda yok.",
+                                extra_tags="danger"
+                            )
+                            return redirect("workers:import_workers")
+
+                        lookup_ids[f"{col}_id"] = obj.id
+
+                    # ✅ Worker add/update
+                    Workers.objects.update_or_create(
+                        sicil_no=sicil_no,
+                        defaults={
+                            "name_surname": row.get("name_surname"),
+                            "date_of_recruitment": date_val,
+                            "gross_payment": row.get("gross_payment", 0),
+                            "bonus": row.get("bonus", 0),
+                            "author_id": request.user.id,
+                            **lookup_ids
+                        }
+                    )
+
+                messages.success(
+                    request,
+                    "✔️ Excel import işlemi başarıyla tamamlandı.",
+                    extra_tags="success"
+                )
+                return redirect("workers:dashboard")
+
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Import sırasında beklenmeyen hata: {str(e)}")
+
+                messages.error(
+                    request,
+                    "⚠️ Beklenmeyen bir hata oluştu. Lütfen sistem yöneticisi ile iletişime geçin.",
+                    extra_tags="danger"
+                )
+                return redirect("workers:import_workers")
+
+    else:
+        form = WorkerImportForm()
+
+    return render(request, "import_workers.html", {"form": form})

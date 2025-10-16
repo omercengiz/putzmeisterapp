@@ -131,3 +131,10 @@ class BenefitBulkForm(forms.Form):
             return sorted({int(m) for m in data})
         except Exception:
             raise forms.ValidationError("Ay seçimi geçersiz.")
+
+
+class BenefitImportForm(forms.Form):
+    file = forms.FileField(
+        label="Excel Dosyası (.xlsx)",
+        help_text="Lütfen .xlsx formatında bir dosya yükleyin."
+    )

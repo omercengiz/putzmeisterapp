@@ -4,9 +4,11 @@ from django.contrib import messages
 from django.db import IntegrityError, transaction 
 from django.core.paginator import Paginator
 from datetime import timedelta, datetime, date
-
 from .models import Benefit
-from .forms import BenefitForm, BenefitBulkForm
+from workers.models import Workers
+from .forms import BenefitForm, BenefitBulkForm, BenefitImportForm
+import pandas as pd
+
 
 @login_required
 def benefit_list(request):
@@ -124,3 +126,54 @@ def benefit_bulk(request):
         return redirect("benefits:list")
 
     return render(request, "benefits/benefit_bulk_form.html", {"form": form, "title": "Bulk Add/Update Benefits"})
+
+
+@login_required
+def import_benefits(request):
+    if request.method == "POST":
+        form = BenefitImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            excel_file = request.FILES['file']
+            try:
+                df = pd.read_excel(excel_file)
+
+                required_columns = [
+                    "sicil_no", "period", "aile_yakacak", "erzak", "altin",
+                    "bayram", "dogum_evlenme", "fon", "harcirah", "yol_parasi", "prim"
+                ]
+                missing = [c for c in required_columns if c not in df.columns]
+                if missing:
+                    messages.error(request, f"Eksik kolonlar: {', '.join(missing)}")
+                    return redirect("benefits:import_benefits")
+
+                # Satırları ekle/güncelle
+                for _, row in df.iterrows():
+                    worker = Workers.objects.filter(sicil_no=row["sicil_no"]).first()
+                    if not worker:
+                        continue  # eşleşmeyen sicil_no varsa atla
+
+                    Benefit.objects.update_or_create(
+                        worker=worker,
+                        period=row["period"],
+                        defaults={
+                            "aile_yakacak": row.get("aile_yakacak", 0) or 0,
+                            "erzak": row.get("erzak", 0) or 0,
+                            "altin": row.get("altin", 0) or 0,
+                            "bayram": row.get("bayram", 0) or 0,
+                            "dogum_evlenme": row.get("dogum_evlenme", 0) or 0,
+                            "fon": row.get("fon", 0) or 0,
+                            "harcirah": row.get("harcirah", 0) or 0,
+                            "yol_parasi": row.get("yol_parasi", 0) or 0,
+                            "prim": row.get("prim", 0) or 0,
+                        }
+                    )
+
+                messages.success(request, "Excel import başarıyla tamamlandı.")
+                return redirect('benefits:list')
+            except Exception as e:
+                messages.error(request, f"Import hatası: {str(e)}")
+                return redirect("benefits:import_benefits")
+    else:
+        form = BenefitImportForm()
+
+    return render(request, "benefits/import_benefits.html", {"form": form})

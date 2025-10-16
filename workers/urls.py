@@ -16,4 +16,5 @@ urlpatterns = [
     path("salary/<int:salary_id>/delete/", views.delete_salary_record, name="delete_salary_record"),
     path("salary/<int:salary_id>/delete/", views.delete_salary_record, name="delete_salary_record"),
     path("salary/<int:salary_id>/update/", views.update_salary_record, name="update_salary_record"),  
+    path("import/", views.import_workers, name="import_workers"),
 ]
