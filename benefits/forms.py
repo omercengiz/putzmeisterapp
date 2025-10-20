@@ -50,9 +50,6 @@ class BenefitForm(forms.ModelForm):
         return val
 
     def clean(self):
-        """
-        Aynı çalışan + aynı ay kaydı var mı? (update sırasında kendi kaydını hariç tut)
-        """
         cleaned = super().clean()
         worker = cleaned.get('worker')
         period = cleaned.get('period')
@@ -74,7 +71,7 @@ class BenefitForm(forms.ModelForm):
         ]
 
 
-# -------- Bulk (çoklu ay) formu --------
+# -------- Bulk monthly form --------
 
 MONTH_CHOICES = [(m, calendar.month_name[m]) for m in range(1, 13)]  # 1..12
 
@@ -125,16 +122,15 @@ class BenefitBulkForm(forms.Form):
     def clean_months(self):
         data = self.cleaned_data.get("months") or []
         if not data:
-            raise forms.ValidationError("En az bir ay seçmelisiniz.")
+            raise forms.ValidationError("You must select at least one month.")
         try:
-            # Tekrarsız ve sıralı int listesi
             return sorted({int(m) for m in data})
         except Exception:
-            raise forms.ValidationError("Ay seçimi geçersiz.")
+            raise forms.ValidationError("Invalid month selection.")
 
 
 class BenefitImportForm(forms.Form):
     file = forms.FileField(
-        label="Excel Dosyası (.xlsx)",
-        help_text="Lütfen .xlsx formatında bir dosya yükleyin."
+        label="Excel File (.xlsx)",
+        help_text="Please upload a file in .xlsx format."
     )
