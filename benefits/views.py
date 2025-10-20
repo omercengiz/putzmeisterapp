@@ -143,7 +143,7 @@ def import_benefits(request):
                 ]
                 missing = [c for c in required_columns if c not in df.columns]
                 if missing:
-                    messages.error(request, f"Eksik kolonlar: {', '.join(missing)}")
+                    messages.error(request, f"Missing columns: {', '.join(missing)}")
                     return redirect("benefits:import_benefits")
 
                 # Satırları ekle/güncelle
@@ -168,10 +168,10 @@ def import_benefits(request):
                         }
                     )
 
-                messages.success(request, "Excel import başarıyla tamamlandı.")
+                messages.success(request, "Excel import has been successfully completed. ✅")
                 return redirect('benefits:list')
             except Exception as e:
-                messages.error(request, f"Import hatası: {str(e)}")
+                messages.error(request, f"Import Error: {str(e)}")
                 return redirect("benefits:import_benefits")
     else:
         form = BenefitImportForm()
