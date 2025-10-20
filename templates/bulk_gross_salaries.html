@@ -1,0 +1,84 @@
+{% extends "layout.html" %}
+{% load crispy_forms_tags %}
+
+{% block body %}
+<div class="container mt-4">
+  <h3>Bulk Add/Update Gross Salary</h3>
+  <hr>
+
+  <form method="post" id="bulk-form">
+    {% csrf_token %}
+    <!-- worker değiştiğinde formun 'refresh=1' ile geri gelmesini sağlar -->
+    <input type="hidden" name="refresh" id="id_refresh" value="">
+
+    <div class="row mb-3">
+      <div class="col-md-3">
+        {{ form.worker|as_crispy_field }}
+      </div>
+      <div class="col-md-2">
+        {{ form.year|as_crispy_field }}
+      </div>
+      <div class="col-md-3">
+        {{ form.gross_salary|as_crispy_field }}
+      </div>
+      <div class="col-md-2">
+        {{ form.currency|as_crispy_field }}
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Months</label>
+      <div class="d-flex flex-wrap gap-2" id="months-toggle">
+        {% for value, label in form.fields.months.choices %}
+          <input type="checkbox" class="btn-check" name="months" value="{{ value }}" id="month{{ value }}"
+                 {% if value|stringformat:"s" in form.months.value %}checked{% endif %}>
+          <label class="btn btn-outline-primary" for="month{{ value }}">{{ label }}</label>
+        {% endfor %}
+      </div>
+      <div class="mt-2">
+        <button type="button" class="btn btn-sm btn-outline-dark" onclick="selectAll()">Select All</button>
+        <button type="button" class="btn btn-sm btn-outline-dark" onclick="clearAll()">Clear</button>
+        <button type="button" class="btn btn-sm btn-outline-info" onclick="selectQuarter(1)">Q1</button>
+        <button type="button" class="btn btn-sm btn-outline-info" onclick="selectQuarter(2)">Q2</button>
+        <button type="button" class="btn btn-sm btn-outline-info" onclick="selectQuarter(3)">Q3</button>
+        <button type="button" class="btn btn-sm btn-outline-info" onclick="selectQuarter(4)">Q4</button>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      {{ form.overwrite_existing }}
+      {{ form.overwrite_existing.label_tag }}
+    </div>
+
+    <div class="d-flex justify-content-end gap-2">
+      <a href="{% url 'workers:dashboard' %}" class="btn btn-secondary">Cancel</a>
+      <button type="submit" class="btn btn-success"
+              onclick="document.getElementById('id_refresh').value='';">Apply</button>
+    </div>
+  </form>
+</div>
+
+<script>
+function selectAll(){ document.querySelectorAll('#months-toggle input').forEach(el => el.checked = true); }
+function clearAll(){ document.querySelectorAll('#months-toggle input').forEach(el => el.checked = false); }
+function selectQuarter(q){
+  clearAll();
+  const m = {1:[1,2,3],2:[4,5,6],3:[7,8,9],4:[10,11,12]}[q] || [];
+  m.forEach(x => document.getElementById('month'+x).checked = true);
+}
+
+// Ajax yok: worker değişince formu refresh=1 ile post ediyoruz (form __init__'te otomatik doldurma yapılır)
+document.addEventListener('DOMContentLoaded', function(){
+  const workerSel = document.getElementById('id_worker');
+  const form = document.getElementById('bulk-form');
+  const refresh = document.getElementById('id_refresh');
+
+  if (workerSel){
+    workerSel.addEventListener('change', function(){
+      refresh.value = '1';
+      form.submit();
+    });
+  }
+});
+</script>
+{% endblock %}

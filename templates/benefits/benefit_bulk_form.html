@@ -1,0 +1,152 @@
+{% extends "layout.html" %}
+{% load crispy_forms_tags %}
+
+{% block body %}
+<div class="row">
+  <div class="col-md-10 offset-md-1">
+
+    <h3 class="fw-bold">{{ title }}</h3>
+    <hr>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          {{ form.worker|as_crispy_field }}
+        </div>
+        <div class="col-md-2 mb-3">
+          {{ form.year|as_crispy_field }}
+        </div>
+
+        <!-- Months block (ferah üst bar) -->
+        <div class="col-md-6 mb-3">
+          <label class="form-label mb-1">{{ form.months.label }}</label>
+
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+            <span class="badge rounded-pill bg-primary-subtle text-primary">
+              Selected: <span id="months-count">0</span>
+            </span>
+
+            <div class="btn-toolbar ms-auto" role="toolbar" aria-label="Months actions">
+              <div class="btn-group btn-group-sm me-2 mb-1" role="group" aria-label="Select/Clear">
+                <button type="button" class="btn btn-outline-primary" onclick="toggleMonths(true)">Select All</button>
+                <button type="button" class="btn btn-outline-secondary" onclick="toggleMonths(false)">Clear</button>
+              </div>
+              <div class="btn-group btn-group-sm mb-1" role="group" aria-label="Quarters">
+                <button type="button" class="btn btn-outline-primary" onclick="selectQuarter(1)">Q1</button>
+                <button type="button" class="btn btn-outline-primary" onclick="selectQuarter(2)">Q2</button>
+                <button type="button" class="btn btn-outline-primary" onclick="selectQuarter(3)">Q3</button>
+                <button type="button" class="btn btn-outline-primary" onclick="selectQuarter(4)">Q4</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="border rounded p-2 bg-white" style="max-height:220px; overflow:auto;">
+            {{ form.months }}
+          </div>
+
+          <div class="form-check mt-2">
+            {{ form.overwrite_existing }}
+            <label class="form-check-label" for="{{ form.overwrite_existing.id_for_label }}">
+              {{ form.overwrite_existing.label }}
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Amount fields -->
+      <div class="row">
+        <div class="col-md-3 mb-3">{{ form.aile_yakacak|as_crispy_field }}</div>
+        <div class="col-md-3 mb-3">{{ form.erzak|as_crispy_field }}</div>
+        <div class="col-md-3 mb-3">{{ form.altin|as_crispy_field }}</div>
+        <div class="col-md-3 mb-3">{{ form.bayram|as_crispy_field }}</div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-3 mb-3">{{ form.dogum_evlenme|as_crispy_field }}</div>
+        <div class="col-md-3 mb-3">{{ form.fon|as_crispy_field }}</div>
+        <div class="col-md-3 mb-3">{{ form.harcirah|as_crispy_field }}</div>
+        <div class="col-md-3 mb-3">{{ form.yol_parasi|as_crispy_field }}</div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-3 mb-3">{{ form.prim|as_crispy_field }}</div>
+      </div>
+
+        <div class="d-flex justify-content-end align-items-center gap-2 mt-3">
+            <a href="{% url 'benefits:list' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn fw-semibold"
+                style="--bs-btn-bg:#6f42c1; --bs-btn-border-color:#5a35a3; --bs-btn-color:#f2efff;
+                    --bs-btn-hover-bg:#5b36a3; --bs-btn-hover-border-color:#4f2f92; --bs-btn-hover-color:#fff;
+                    --bs-btn-focus-shadow-rgb:111,66,193;">
+                Apply
+            </button>
+        </div>
+
+    </form>
+
+  </div>
+</div>
+
+<script>
+  // Months checkboxlarını Bootstrap "chip" buton gibi göstermek (ek CSS yok)
+  function enhanceMonthsUI() {
+    const ul = document.getElementById('id_months');
+    if (!ul) return;
+
+    ul.classList.add('d-flex','flex-wrap','gap-2','list-unstyled','mb-0');
+
+    ul.querySelectorAll('li').forEach(li => {
+      li.classList.add('m-0');
+      const label = li.querySelector('label');
+      const cb = li.querySelector('input[type="checkbox"]');
+      if (!label || !cb) return;
+
+      // label’ı buton gibi stil ver
+      label.classList.add('btn','btn-sm','btn-outline-primary');
+      label.style.borderRadius = '50rem';
+      label.style.userSelect = 'none';
+
+      const sync = () => {
+        if (cb.checked) {
+          label.classList.remove('btn-outline-primary');
+          label.classList.add('btn-primary');
+        } else {
+          label.classList.add('btn-outline-primary');
+          label.classList.remove('btn-primary');
+        }
+      };
+      cb.addEventListener('change', sync);
+      sync();
+    });
+  }
+
+  function monthCheckboxes(){ return document.querySelectorAll('input[name="months"]'); }
+  function updateCount(){
+    const n = document.querySelectorAll('input[name="months"]:checked').length;
+    const el = document.getElementById('months-count');
+    if (el) el.textContent = n;
+  }
+  function toggleMonths(check){
+    monthCheckboxes().forEach(cb => { cb.checked = check; cb.dispatchEvent(new Event('change')); });
+    updateCount();
+  }
+  function selectQuarter(q){
+    const ranges = {1:[1,3],2:[4,6],3:[7,9],4:[10,12]};
+    const [s,e] = ranges[q];
+    monthCheckboxes().forEach(cb => {
+      const m = parseInt(cb.value,10);
+      cb.checked = (m >= s && m <= e);
+      cb.dispatchEvent(new Event('change'));
+    });
+    updateCount();
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    enhanceMonthsUI();
+    monthCheckboxes().forEach(cb => cb.addEventListener('change', updateCount));
+    updateCount();
+  });
+</script>
+{% endblock %}

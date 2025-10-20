@@ -1,0 +1,81 @@
+{% extends "layout.html" %}
+
+{% block body %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+
+      <!-- Başlık -->
+      <div class="mb-4 text-center">
+        <h2 class="fw-bold">Worker Import</h2>
+        <p class="text-muted">Upload a file in .xlsx format</p>
+      </div>
+
+      <!-- Upload Form -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="d-flex justify-content-end gap-2">
+              <a href="{% url 'workers:dashboard' %}" class="btn btn-secondary">Cancel</a>
+              <button type="submit" class="btn btn-success">Import</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Expected Columns (Collapsible) -->
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+          <button class="btn btn-link text-white text-decoration-none d-flex align-items-center w-100"
+                  type="button" data-bs-toggle="collapse" data-bs-target="#expectedColumns"
+                  aria-expanded="false" aria-controls="expectedColumns"
+                  style="text-align:left;">
+            <span class="flex-grow-1">Expected Columns</span>
+            <i class="bi bi-chevron-down toggle-icon ms-2"></i>
+          </button>
+        </div>
+        <div id="expectedColumns" class="collapse">
+          <div class="card-body">
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item">Group</li>
+              <li class="list-group-item">Sicil No</li>
+              <li class="list-group-item">Cost Center</li>
+              <li class="list-group-item">Directorship</li>
+              <li class="list-group-item">Status</li>
+              <li class="list-group-item">Name surname</li>
+              <li class="list-group-item">Date of Recruitment (YYYY-MM-DD)</li>
+              <li class="list-group-item">Work Class</li>
+              <li class="list-group-item">Class Name</li>
+              <li class="list-group-item">Department</li>
+              <li class="list-group-item">Gross Payment</li>
+              <li class="list-group-item">Currency</li>
+              <li class="list-group-item">Bonus</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Collapse Toggle Script -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const collapse = document.getElementById("expectedColumns");
+    const icon = document.querySelector(".toggle-icon");
+
+    collapse.addEventListener("show.bs.collapse", function () {
+      icon.classList.remove("bi-chevron-down");
+      icon.classList.add("bi-chevron-up");
+    });
+
+    collapse.addEventListener("hide.bs.collapse", function () {
+      icon.classList.remove("bi-chevron-up");
+      icon.classList.add("bi-chevron-down");
+    });
+  });
+</script>
+{% endblock %}

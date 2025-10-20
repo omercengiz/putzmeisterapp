@@ -2,6 +2,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
+import calendar
 from .lookups import (
     Group, ShortClass, DirectorName, Currency,
     WorkClass, ClassName, Department, CostCenter
@@ -263,3 +264,40 @@ class ArchivedWorker(BaseWorker):
     def __str__(self):
         return f"Archived - {self.name_surname}"
     
+
+class WorkerGrossMonthly(models.Model):
+    worker = models.ForeignKey(
+        Workers,
+        on_delete=models.CASCADE,
+        related_name="monthly_gross_salaries"
+    )
+
+    year = models.PositiveIntegerField()
+    month = models.PositiveIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(12)]
+    )
+
+    gross_salary = models.DecimalField(max_digits=15, decimal_places=2)
+    currency = models.ForeignKey("Currency", null=True, blank=True, on_delete=models.SET_NULL)  # 🔑 burası eklendi
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "worker_gross_monthly"
+        unique_together = ("worker", "year", "month")
+
+    def __str__(self):
+        return f"{self.worker.name_surname} ({self.worker.sicil_no}) - {self.month}/{self.year}: {self.gross_salary}"
+
+    @property
+    def sicil_no(self):
+        return self.worker.sicil_no
+
+    @property
+    def name_surname(self):
+        return self.worker.name_surname
+    
+    @property
+    def month_name(self):
+        return calendar.month_name[self.month]

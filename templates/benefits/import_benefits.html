@@ -1,0 +1,59 @@
+{% extends "layout.html" %}
+
+{% block body %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+
+      <!-- Başlık -->
+      <div class="mb-4 text-center">
+        <h2 class="fw-bold">Benefit Import</h2>
+        <p class="text-muted">.xlsx formatında dosya yükleyin</p>
+      </div>
+
+      <!-- Upload Form -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="d-flex justify-content-end gap-2">
+              <a href="{% url 'benefits:list' %}" class="btn btn-secondary">Cancel</a>
+              <button type="submit" class="btn btn-success">Import</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Expected Columns -->
+      <div class="accordion" id="expectedColumnsAccordion">
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingColumns">
+            <button class="accordion-button collapsed bg-dark text-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseColumns" aria-expanded="false" aria-controls="collapseColumns">
+              Expected Columns
+            </button>
+          </h2>
+          <div id="collapseColumns" class="accordion-collapse collapse" aria-labelledby="headingColumns" data-bs-parent="#expectedColumnsAccordion">
+            <div class="accordion-body">
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item">sicil_no</li>
+                <li class="list-group-item">period (YYYY-MM)</li>
+                <li class="list-group-item">aile_yakacak</li>
+                <li class="list-group-item">erzak</li>
+                <li class="list-group-item">altin</li>
+                <li class="list-group-item">bayram</li>
+                <li class="list-group-item">dogum_evlenme</li>
+                <li class="list-group-item">fon</li>
+                <li class="list-group-item">harcirah</li>
+                <li class="list-group-item">yol_parasi</li>
+                <li class="list-group-item">prim</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
