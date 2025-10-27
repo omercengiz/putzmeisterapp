@@ -8,6 +8,8 @@ from .lookups import (
     WorkClass, ClassName, Department, CostCenter
 )
 
+
+
 class BaseWorker(models.Model):
     GROUP_CHOICES = [
         ('PTR', 'PTR'),
