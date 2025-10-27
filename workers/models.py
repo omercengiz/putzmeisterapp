@@ -303,3 +303,5 @@ class WorkerGrossMonthly(models.Model):
     @property
     def month_name(self):
         return calendar.month_name[self.month]
+
+# --------- Removed code from here ---------
