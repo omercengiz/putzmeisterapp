@@ -10,4 +10,4 @@ class BenefitAdmin(admin.ModelAdmin):
     )
     search_fields = ('worker__sicil_no', 'worker__name_surname')
 
-
+# admin.py
