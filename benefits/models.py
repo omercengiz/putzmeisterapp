@@ -12,6 +12,8 @@ class Benefit(models.Model):
         verbose_name='Sicil No'
     )
 
+    
+
     period = models.DateField(verbose_name="Benefit Period") 
     aile_yakacak       = models.DecimalField(max_digits=12, decimal_places=2, default=0, validators=[MinValueValidator(0)], verbose_name="Family")
     erzak              = models.DecimalField(max_digits=12, decimal_places=2, default=0, validators=[MinValueValidator(0)], verbose_name="Provision")
