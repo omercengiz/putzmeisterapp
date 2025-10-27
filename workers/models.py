@@ -8,7 +8,7 @@ from .lookups import (
     WorkClass, ClassName, Department, CostCenter
 )
 
-
+# logging need
 
 class BaseWorker(models.Model):
     GROUP_CHOICES = [
