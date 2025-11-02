@@ -93,7 +93,7 @@
           {% csrf_token %}
           <p id="deleteWorkerText" class="mb-3"></p>
 
-          <div class="mb-3">
+          <div class="mb-3" id="quitDateWrapper">
             <label for="exitDate" class="form-label">Quit Date</label>
             <input type="date" class="form-control" id="exitDate" name="exit_date" required>
           </div>
@@ -143,19 +143,37 @@ document.addEventListener('DOMContentLoaded', function () {
   const formEl  = document.getElementById('deleteWorkerForm');
   const textEl  = document.getElementById('deleteWorkerText');
   const dateEl  = document.getElementById('exitDate');
+  const dateWrapper = document.getElementById('quitDateWrapper');
 
   document.querySelectorAll('.open-delete-modal').forEach(btn => {
     btn.addEventListener('click', function () {
       const workerId = this.dataset.workerId;
       const workerName = this.dataset.workerName || '';
+      const sicilNoCell = this.closest('tr').querySelector('td:first-child'); // 1. sütun: sicil no
+      const sicilNo = sicilNoCell ? sicilNoCell.textContent.trim() : '';
 
       formEl.setAttribute('action', `/workers/delete/${workerId}`);
-      textEl.textContent = `You are about to process the checkout for '${workerName}'. Please select the checkout date.`;
       dateEl.value = '';
+
+      // Sicil numarasına göre koşul
+      if (sicilNo.startsWith('P')) {
+        // "Employee quit" mesajını sadeleştir
+        textEl.textContent = `You are about to delete '${workerName}' (Sicil No: ${sicilNo}). This record will be deleted directly without asking for quit date.`;
+
+        // Tarih alanını gizle ve zorunluluğu kaldır
+        dateWrapper.style.display = 'none';
+        dateEl.removeAttribute('required');
+      } else {
+        // Normal çalışan: tarih alanı görünür ve zorunlu
+        textEl.textContent = `You are about to process the checkout for '${workerName}'. Please select the quit date.`;
+        dateWrapper.style.display = 'block';
+        dateEl.setAttribute('required', 'required');
+      }
     });
   });
 });
 </script>
+
 
 
 {% if query and page_obj.paginator.count == 0 %}
