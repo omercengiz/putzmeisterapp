@@ -114,7 +114,17 @@ def updateWorkers(request, id):
 def deleteWorkers(request, id):
     worker = get_object_or_404(Workers, id=id)
 
-    # Modal formundan gelen çıkış tarihi (YYYY-MM-DD)
+    # Eğer sicil_no 'P' ile başlıyorsa:
+    if worker.sicil_no and worker.sicil_no.startswith("P"):
+        # ❌ Exit date sorma yok, direkt sil
+        worker.delete()
+        messages.warning(
+            request,
+            f"The record was deleted without being archived or asking for the exit date because the Sicil No {worker.sicil_no} starts with 'P'."
+        )
+        return redirect("workers:dashboard")
+
+    # Normal senaryo: önce modal formdan gelen çıkış tarihini al
     exit_date = request.POST.get('exit_date')
 
     # Arşive eklerken çıkış tarihini de yaz
@@ -140,7 +150,7 @@ def deleteWorkers(request, id):
     )
 
     worker.delete()
-    messages.success(request, "Worker deleted and archived.")
+    messages.success(request,f"Sicil No:{worker.sicil_no} - {worker.name_surname} deleted and archived.")
     return redirect("workers:dashboard")
 
 
