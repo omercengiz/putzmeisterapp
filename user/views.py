@@ -95,6 +95,12 @@ def create_user(request):
             # Parola: create'de zorunlu, update'te opsiyonel ama sonra bu kısmı regenerate password 
             # veya invitation link ile yapabiliriz. Belli değil.
             # reset butonu eklendi fakat henüz SMTP modülü eklenmedi.
+
+            email = obj.email.lower().strip()
+            if not email.endswith("@putzmeister.com"):
+                messages.warning(request, "Email must be a valid @putzmeister.com address")
+                return redirect("user:user_permission_dashboard")
+
             password = form.cleaned_data.get('password')
             if password:
                 obj.set_password(password)
