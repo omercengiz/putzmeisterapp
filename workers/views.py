@@ -12,6 +12,7 @@ from django.apps import apps
 import calendar
 import datetime
 import pandas as pd
+from benefits.models import Benefit, ArchivedBenefit
 
 
 
@@ -116,7 +117,6 @@ def deleteWorkers(request, id):
 
     # Eğer sicil_no 'P' ile başlıyorsa:
     if worker.sicil_no and worker.sicil_no.startswith("P"):
-        # ❌ Exit date sorma yok, direkt sil
         worker.delete()
         messages.warning(
             request,
@@ -124,11 +124,11 @@ def deleteWorkers(request, id):
         )
         return redirect("workers:dashboard")
 
-    # Normal senaryo: önce modal formdan gelen çıkış tarihini al
+    # Normal senaryo
     exit_date = request.POST.get('exit_date')
 
-    # Arşive eklerken çıkış tarihini de yaz
-    ArchivedWorker.objects.create(
+    # ➕ ArchivedWorker oluştur
+    archived_worker = ArchivedWorker.objects.create(
         original_id=worker.id,
         created_date=worker.created_date,
         author=worker.author,
@@ -145,13 +145,43 @@ def deleteWorkers(request, id):
         gross_payment=worker.gross_payment,
         currency=worker.currency,
         bonus=worker.bonus,
-        # 👇 ArchivedWorker modelinde bu alanın adı neyse onu kullan:
-        exit_date=exit_date  # ör: 'exit_date' / 'terminated_at'
+        exit_date=exit_date
     )
 
+    # ➕ Worker’a ait Benefit kayıtlarını arşivle
+    benefits = Benefit.objects.filter(worker=worker)
+    archived_benefits = []
+    for b in benefits:
+        archived_benefits.append(ArchivedBenefit(
+            archived_worker=archived_worker,
+            sicil_no=worker.sicil_no,
+            period=b.period,
+            aile_yakacak=b.aile_yakacak,
+            erzak=b.erzak,
+            altin=b.altin,
+            bayram=b.bayram,
+            dogum_evlenme=b.dogum_evlenme,
+            fon=b.fon,
+            harcirah=b.harcirah,
+            yol_parasi=b.yol_parasi,
+            prim=b.prim
+        ))
+
+    if archived_benefits:
+        ArchivedBenefit.objects.bulk_create(archived_benefits)
+
+    # Orijinal benefit kayıtlarını sil
+    benefits.delete()
+
+    # Worker kaydını sil
     worker.delete()
-    messages.success(request,f"Sicil No:{worker.sicil_no} - {worker.name_surname} deleted and archived.")
+
+    messages.success(
+        request,
+        f"Sicil No:{worker.sicil_no} - {worker.name_surname} deleted and archived (including benefits)."
+    )
     return redirect("workers:dashboard")
+
 
 
 def manage_lookups(request):
