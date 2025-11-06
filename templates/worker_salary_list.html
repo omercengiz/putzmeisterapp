@@ -36,23 +36,23 @@
               {% if row.salary %}
                 {{ row.salary.gross_salary|floatformat:2|localize }}
               {% else %}
-                –
+                <span class="text-muted">There is no salary for this month</span>
               {% endif %}
             </td>
             <td class="text-center">
-              {% if row.salary %}
               <div class="d-flex justify-content-center gap-2">
-                <a href="{% url 'workers:update_salary_record' row.salary.id %}" 
-                   class="btn btn-sm btn-primary">Update</a>
+                <a href="{% url 'workers:update_salary_record' row.salary.id|default:0 %}?worker_id={{ worker.id }}&month={{ forloop.counter }}&year={{ row.year }}" 
+                   class="btn btn-sm btn-primary">
+                   {% if row.salary %}Update{% else %}Add{% endif %}
+                </a>
+                {% if row.salary %}
                 <a href="{% url 'workers:delete_salary_record' row.salary.id %}" 
                    class="btn btn-sm btn-danger"
                    onclick="return confirm('Bu maaş kaydını silmek istediğinize emin misiniz?');">
                    Delete
                 </a>
+                {% endif %}
               </div>
-              {% else %}
-              <span class="text-muted">There is no salary for this month</span>
-              {% endif %}
             </td>
           </tr>
           {% endfor %}
