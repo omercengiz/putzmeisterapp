@@ -4,3 +4,4 @@ django-crispy-forms
 crispy-bootstrap4
 pandas>=2.0
 openpyxl>=3.1
+numpy>=2.3.0

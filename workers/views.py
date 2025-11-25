@@ -5,7 +5,7 @@ from django.contrib import messages
 from .models import Workers, ArchivedWorker, WorkerGrossMonthly
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
-from .lookups import Group, ShortClass, DirectorName, Currency, WorkClass, ClassName, Department, CostCenter
+from .lookups import Group, ShortClass, DirectorName, Currency, WorkClass, ClassName, Department, CostCenter, ExitReason
 from django.forms import modelform_factory
 from django.views.decorators.http import require_POST
 from django.apps import apps
@@ -26,6 +26,7 @@ lookup_models = {
     "ClassName": ClassName,
     "Department": Department,
     "CostCenter": CostCenter,
+    "ExitReason": ExitReason,
 }
 
 
@@ -47,20 +48,31 @@ def detail(request, id):
 @login_required(login_url="user:login")
 def dashboard(request):
     query = request.GET.get("q")
+    workers = Workers.objects.all()
+
+    # Arama
     if query:
-        workers = Workers.objects.filter(sicil_no__iexact=query)
-    else:
-        workers = Workers.objects.all()
-    
-    paginator = Paginator(workers, 5)  
+        workers = workers.filter(
+            sicil_no__icontains=query
+        ) | workers.filter(
+            name_surname__icontains=query
+        )
+
+    # Sayfalama
+    paginator = Paginator(workers, 5)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-    context = {
-        "page_obj": page_obj,
-        "query": query
-    }
-    return render(request, "dashboard.html", context)
+    return render(
+        request,
+        "dashboard.html",
+        {
+            "page_obj": page_obj,
+            "query": query,
+            "exit_reasons": ExitReason.objects.all(),  # <-- BURAYA EKLİYORSUN
+        }
+    )
+
 
 
 @login_required(login_url="user:login")
@@ -99,7 +111,7 @@ def updateWorkers(request, id):
         exists_workers = Workers.objects.exclude(id=worker.id).filter(sicil_no=new_sicil).exists()
         exits_archived = ArchivedWorker.objects.filter(sicil_no=new_sicil).exists()
 
-        # Aynı sicil_no başka bir kayıtla çakışıyor mu kontrolü
+        #if sicil_no exists then check(overlap)
         if exists_workers or exits_archived:
             form.add_error("sicil_no", "This Sicil No is already used by another worker.")
         else:
@@ -115,7 +127,7 @@ def updateWorkers(request, id):
 def deleteWorkers(request, id):
     worker = get_object_or_404(Workers, id=id)
 
-    # Eğer sicil_no 'P' ile başlıyorsa:
+    #if sicil_no startwith("P"): then deletion but no archive
     if worker.sicil_no and worker.sicil_no.startswith("P"):
         worker.delete()
         messages.warning(
@@ -124,8 +136,9 @@ def deleteWorkers(request, id):
         )
         return redirect("workers:dashboard")
 
-    # Normal senaryo
     exit_date = request.POST.get('exit_date')
+    exit_reason_id = request.POST.get("exit_reason")
+    exit_reason = ExitReason.objects.filter(id=exit_reason_id).first()
 
     # ➕ ArchivedWorker oluştur
     archived_worker = ArchivedWorker.objects.create(
@@ -145,7 +158,8 @@ def deleteWorkers(request, id):
         gross_payment=worker.gross_payment,
         currency=worker.currency,
         bonus=worker.bonus,
-        exit_date=exit_date
+        exit_date=exit_date,
+        exit_reason=exit_reason
     )
 
     # ➕ Worker’a ait Benefit kayıtlarını arşivle
@@ -235,9 +249,8 @@ def update_lookup(request, model_name, pk):
                 if hasattr(obj, real_field):
                     setattr(obj, real_field, value)
         obj.save()
-        return redirect('manage_lookups')  # burası önemli
+        return redirect('manage_lookups')  
 
-    # GET istekleri için de redirect et
     return redirect('manage_lookups')
 
 
@@ -300,17 +313,17 @@ def update_salary_record(request, salary_id):
             messages.error(request, f"Invalid year/month value: {year}/{month}")
             return redirect("workers:dashboard")
 
-        # Çalışanı getir
+        # just get the worker 
         worker = get_object_or_404(Workers, pk=worker_id)
 
-        # Maaş kaydını getir veya oluştur
+        # get or create salary
         salary, _ = WorkerGrossMonthly.objects.get_or_create(
             worker=worker,
             year=year,
             month=month,
             defaults={
                 "gross_salary": worker.gross_payment or 0,
-                "currency": worker.currency,  # otomatik ata
+                "currency": worker.currency,  # assign automatically from worker 
             },
         )
     else:
@@ -332,7 +345,7 @@ def update_salary_record(request, salary_id):
             return redirect("workers:list_worker_salaries", worker_id=worker.id)
     else:
         form = WorkerGrossMonthlyForm(instance=salary)
-        # Formun currency alanını sadece görüntüleme amaçlı kilitle
+        # lock the currency field bc it's auto-set from worker
         if "currency" in form.fields:
             form.fields["currency"].disabled = True
 
@@ -355,7 +368,6 @@ def list_worker_salaries(request, worker_id):
     worker = get_object_or_404(Workers, id=worker_id)
     year = request.GET.get("year", datetime.date.today().year)
 
-    # O yıl için tüm maaş kayıtlarını al
     salaries = WorkerGrossMonthly.objects.filter(worker=worker, year=year)
     salaries_dict = {s.month: s for s in salaries}
 
@@ -376,9 +388,6 @@ def list_worker_salaries(request, worker_id):
 
 
 def delete_salary_record(request, salary_id):
-    """
-    Tek bir maaş kaydını siler.
-    """
     salary = get_object_or_404(WorkerGrossMonthly, pk=salary_id)
     worker_id = salary.worker.id
     worker_name = salary.worker.name_surname
@@ -396,7 +405,7 @@ def import_workers(request):
             try:
                 df = pd.read_excel(excel_file)
 
-                # column maplemesi
+                # column mapping
                 column_mapping = {
                     "Group": "group",
                     "Sicil No": "sicil_no",

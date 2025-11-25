@@ -5,63 +5,79 @@
 
 <h3>Workers</h3>
 <hr>
+
+<!-- Search Filters -->
 <div class="row mb-3 align-items-center">
   <div class="col-md-6">
-    <form method="get" class="d-flex">
-      <input type="text" name="q" class="form-control me-2" placeholder="Search by Sicil No" value="{{ query|default_if_none:'' }}" style="width: 200px;">
-      <button type="submit" class="btn btn-primary me-2">Search</button>
+    <form method="get" class="d-flex" style="gap: 10px;">
+
+      <!-- Name or Sicil No Search -->
+      <input type="text"
+             name="q"
+             class="form-control"
+             placeholder="Sicil No or Name"
+             value="{{ query|default_if_none:'' }}"
+             style="max-width:200px;">
+
+
+
+      <button type="submit" class="btn btn-primary">Search</button>
       <a href="{% url 'workers:dashboard' %}" class="btn btn-secondary">Clear</a>
+
     </form>
   </div>
+
+  <!-- Right Buttons -->
   <div class="col-md-6 text-end">
     <a class="btn btn-danger" href="{% url 'workers:addworkers' %}">Add a Member</a>
     <a class="btn btn-success" href="{% url 'workers:bulk_set_gross_salaries' %}">Bulk Add/Update</a>
     <a class="btn btn-primary" href="{% url 'workers:import_workers' %}">Import Workers</a>
   </div>
 </div>
+
 <hr>
 
 <table class="table">
     <thead>
       <tr>
-        <th scope="col">Sicil.No</th>
-        <th scope="col">Name Surname</th>
-        <th scope="col">Date of Recruitment</th>
-        <th scope="col">Group</th>
-        <th scope="col">Director</th>
-        <th scope="col">Cost Center</th>  
-        <th scope="col">Department</th>
-        <th scope="col">Short Class</th>
-        <th scope="col">Work Class</th>
-        <th scope="col">Class Name</th>
-        <th scope="col">Gross Payment</th>
-        <th scope="col">Currency</th>
-        <th scope="col">Bonus</th>
-        <th scope="col">Actions</th>
+        <th>ID No</th>
+        <th>Name Surname</th>
+        <th>Date of Recruitment</th>
+        <th>Group</th>
+        <th>Director</th>
+        <th>Cost Center</th>  
+        <th>Department</th>
+        <th>Work Class</th>
+        <th>Short Class</th>
+        <th>Class Name</th>
+        <th>Gross Payment</th>
+        <th>Bonus</th>
+        <th>Actions</th>
       </tr>
     </thead>
+
     <tbody>
         {% for worker in page_obj %}
         <tr>
-            <td>{{worker.sicil_no}}</td>
-            <td>{{worker.name_surname}}</td>
-            <td>{{worker.date_of_recruitment|date:"d.m.Y"}}</td>
-            <td>{{worker.group}}</td>
-            <td>{{worker.department_short_name}}</td>
-            <td>{{worker.s_no.code}}</td>
-            <td>{{worker.department}}</td>
-            <td>{{worker.short_class}}</td>
-            <td>{{worker.work_class}}</td>
-            <td>{{worker.class_name}}</td>
+            <td>{{ worker.sicil_no }}</td>
+            <td>{{ worker.name_surname }}</td>
+            <td>{{ worker.date_of_recruitment|date:"d.m.Y" }}</td>
+            <td>{{ worker.group }}</td>
+            <td>{{ worker.department_short_name }}</td>
+            <td>{{ worker.s_no.code }}</td>
+            <td>{{ worker.department }}</td>
+            <td>{{ worker.work_class }}</td>
+            <td>{{ worker.short_class }}</td>
+            <td>{{ worker.class_name }}</td>
             <td>{{ worker.gross_payment|floatformat:2|localize }}</td>
-            <td>{{worker.currency}}</td>
             <td>{{ worker.bonus }}</td>
             <td>
               <div class="d-flex gap-2">
+
                 <!-- Update -->
                 <a href="{% url 'workers:updateworkers' worker.id %}" class="btn btn-danger btn-sm">Update</a>
 
-                <!-- Maaş Detayı -->
+                <!-- Salary Details -->
                 <a href="{% url 'workers:list_worker_salaries' worker.id %}" class="btn btn-danger btn-sm">Details</a>
 
                 <!-- Delete -->
@@ -73,24 +89,28 @@
                         data-worker-name="{{ worker.name_surname }}">
                   Delete
                 </button>
+
               </div>
             </td>
-        </tr> 
+        </tr>
         {% endfor %}
     </tbody>
 </table>
 
-<!-- Delete (Archived) Modal -->
+
+<!-- Delete Modal (Archived or Direct Delete) -->
 <div class="modal fade" id="deleteWorkerModal" tabindex="-1" aria-labelledby="deleteWorkerModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content shadow">
       <div class="modal-header bg-danger text-white">
         <h5 class="modal-title" id="deleteWorkerModalLabel">Employee Quit</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
+
       <div class="modal-body">
         <form id="deleteWorkerForm" method="post" action="#">
           {% csrf_token %}
+
           <p id="deleteWorkerText" class="mb-3"></p>
 
           <div class="mb-3" id="quitDateWrapper">
@@ -98,10 +118,21 @@
             <input type="date" class="form-control" id="exitDate" name="exit_date" required>
           </div>
 
+          <div class="mb-3" id="exitReasonWrapper">
+            <label for="exitReason" class="form-label">Quit Reason</label>
+            <select id="exitReason" name="exit_reason" class="form-select" required>
+              <option value="">Select Reason...</option>
+              {% for r in exit_reasons %}
+                <option value="{{ r.id }}">{{ r.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
           <div class="d-flex justify-content-end gap-2">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Discard</button>
             <button type="submit" class="btn btn-danger">Delete Worker</button>
           </div>
+
         </form>
       </div>
     </div>
@@ -109,35 +140,51 @@
 </div>
 
 
-<!-- Pagination Controls -->
+<!-- Pagination -->
 <nav aria-label="Page navigation">
   <ul class="pagination justify-content-center">
+
     {% if page_obj.has_previous %}
       <li class="page-item">
-        <a class="page-link" href="?page=1{% if query %}&q={{ query }}{% endif %}">&laquo; First</a>
+        <a class="page-link"
+           href="?page=1{% if query %}&q={{ query }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}">
+           &laquo; First
+        </a>
       </li>
+
       <li class="page-item">
-        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">Previous</a>
+        <a class="page-link"
+           href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}">
+           Previous
+        </a>
       </li>
     {% endif %}
 
     <li class="page-item active">
-      <span class="page-link">
-        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-      </span>
+      <span class="page-link">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
     </li>
 
     {% if page_obj.has_next %}
       <li class="page-item">
-        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}">Next</a>
+        <a class="page-link"
+           href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}">
+           Next
+        </a>
       </li>
+
       <li class="page-item">
-        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}">Last &raquo;</a>
+        <a class="page-link"
+           href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if selected_year %}&year={{ selected_year }}{% endif %}">
+           Last &raquo;
+        </a>
       </li>
     {% endif %}
+
   </ul>
 </nav>
 
+
+<!-- Modal Script -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const formEl  = document.getElementById('deleteWorkerForm');
@@ -149,22 +196,16 @@ document.addEventListener('DOMContentLoaded', function () {
     btn.addEventListener('click', function () {
       const workerId = this.dataset.workerId;
       const workerName = this.dataset.workerName || '';
-      const sicilNoCell = this.closest('tr').querySelector('td:first-child'); // 1. sütun: sicil no
-      const sicilNo = sicilNoCell ? sicilNoCell.textContent.trim() : '';
+      const sicilNo = this.closest('tr').querySelector('td:first-child').textContent.trim();
 
       formEl.setAttribute('action', `/workers/delete/${workerId}`);
       dateEl.value = '';
 
-      // Sicil numarasına göre koşul
       if (sicilNo.startsWith('P')) {
-        // "Employee quit" mesajını sadeleştir
-        textEl.textContent = `You are about to delete '${workerName}' (Sicil No: ${sicilNo}). This record will be deleted directly without asking for quit date.`;
-
-        // Tarih alanını gizle ve zorunluluğu kaldır
+        textEl.textContent = `You are about to delete '${workerName}' (Sicil No: ${sicilNo}). This record will be deleted directly without asking for the quit date.`;
         dateWrapper.style.display = 'none';
         dateEl.removeAttribute('required');
       } else {
-        // Normal çalışan: tarih alanı görünür ve zorunlu
         textEl.textContent = `You are about to process the checkout for '${workerName}'. Please select the quit date.`;
         dateWrapper.style.display = 'block';
         dateEl.setAttribute('required', 'required');
@@ -175,11 +216,10 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 
-
 {% if query and page_obj.paginator.count == 0 %}
   <div class="alert alert-warning mt-3 text-center mx-auto" style="max-width: 500px;" role="alert">
-    No record was found matching Sicil No. <strong>{{ query }}</strong> 
+    No record was found matching <strong>{{ query }}</strong>
   </div>
 {% endif %}
 
-{% endblock body %}
+{% endblock %}

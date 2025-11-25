@@ -21,7 +21,8 @@ class WorkersForm(forms.ModelForm):
             "class_name",
             "gross_payment",
             "currency",
-            "bonus"
+            "bonus",
+            "total_work_hours"
         ]
         widgets = {
             'date_of_recruitment': forms.DateInput(format="%Y-%m-%d", attrs={'type': 'date'})

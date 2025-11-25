@@ -5,12 +5,17 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 import calendar
 from .lookups import (
     Group, ShortClass, DirectorName, Currency,
-    WorkClass, ClassName, Department, CostCenter
+    WorkClass, ClassName, Department, CostCenter, ExitReason
 )
 
 
 
 class BaseWorker(models.Model):
+
+    """
+    These are templates that will be inherited by Workers and ArchivedWorkers,
+    List has been updated as a lookup tables on db
+    """
     GROUP_CHOICES = [
         ('PTR', 'PTR'),
         ('SNY', 'SNY'),
@@ -234,6 +239,7 @@ class BaseWorker(models.Model):
     name_surname = models.CharField(max_length=100)
     date_of_recruitment = models.DateTimeField()
     gross_payment = models.DecimalField(max_digits=15, decimal_places=2)
+    total_work_hours = models.DecimalField(max_digits=10, decimal_places=1, null=True, blank=True, verbose_name="Total Work Hours")
     
     bonus = models.IntegerField(validators=[
         MinValueValidator(0),
@@ -259,6 +265,7 @@ class ArchivedWorker(BaseWorker):
     created_date = models.DateTimeField()
     deleted_at = models.DateTimeField(auto_now_add=True)
     exit_date = models.DateField(null=True, blank=True) # İşçinin çıkış tarihi olacak
+    exit_reason = models.ForeignKey(ExitReason, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         db_table = "archived_workers"
