@@ -22,10 +22,12 @@ class WorkersForm(forms.ModelForm):
             "gross_payment",
             "currency",
             "bonus",
-            "total_work_hours"
+            "total_work_hours",
+            "update_date_user"
         ]
         widgets = {
-            'date_of_recruitment': forms.DateInput(format="%Y-%m-%d", attrs={'type': 'date'})
+            'date_of_recruitment': forms.DateInput(format="%Y-%m-%d", attrs={'type': 'date'}),
+            'update_date_user': forms.DateInput(format="%Y-%m-%d", attrs={'type': 'date'})
         }
 
     def __init__(self, *args, **kwargs):

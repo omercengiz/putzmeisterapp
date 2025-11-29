@@ -69,7 +69,7 @@ def dashboard(request):
         {
             "page_obj": page_obj,
             "query": query,
-            "exit_reasons": ExitReason.objects.all(),  # <-- BURAYA EKLİYORSUN
+            "exit_reasons": ExitReason.objects.all(),  
         }
     )
 
@@ -83,6 +83,7 @@ def AddWorkers(request):
         worker = form.save(commit=False)
         worker.author = request.user
         sicil = worker.sicil_no
+        worker.update_date_user = datetime.date.today()
 
         if is_sicil_no_exist(sicil):
             form.add_error("sicil_no", "This Sicil No already exists in the system.")
@@ -140,7 +141,7 @@ def deleteWorkers(request, id):
     exit_reason_id = request.POST.get("exit_reason")
     exit_reason = ExitReason.objects.filter(id=exit_reason_id).first()
 
-    # ➕ ArchivedWorker oluştur
+    # ArchivedWorker creation
     archived_worker = ArchivedWorker.objects.create(
         original_id=worker.id,
         created_date=worker.created_date,
@@ -162,7 +163,7 @@ def deleteWorkers(request, id):
         exit_reason=exit_reason
     )
 
-    # ➕ Worker’a ait Benefit kayıtlarını arşivle
+    # Worker’a ait Benefit kayıtlarını arşivle
     benefits = Benefit.objects.filter(worker=worker)
     archived_benefits = []
     for b in benefits:
