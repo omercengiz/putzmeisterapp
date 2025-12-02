@@ -433,33 +433,39 @@ def update_salary_record(request, salary_id):
         })
 
 
-
-
-
-
-
 def list_worker_salaries(request, worker_id):
     worker = get_object_or_404(Workers, id=worker_id)
-    year = request.GET.get("year", datetime.date.today().year)
 
-    salaries = WorkerGrossMonthly.objects.filter(worker=worker, year=year)
+    # YIL FİLTRESİ
+    selected_year = request.GET.get("year")
+    current_year = datetime.date.today().year
+
+    try:
+        selected_year = int(selected_year) if selected_year else current_year
+    except:
+        selected_year = current_year
+
+    # Dropdownda göstermek için
+    year_list = list(range(2015, current_year + 1))
+
+    salaries = WorkerGrossMonthly.objects.filter(worker=worker, year=selected_year)
     salaries_dict = {s.month: s for s in salaries}
 
-    # 1–12 ayları sırayla hazırla
     months_data = []
-    for m in range(1, 12+1):
+    for m in range(1, 13):
         months_data.append({
             "month": calendar.month_name[m],
-            "year": year,
-            "salary": salaries_dict.get(m)
+            "month_num": m,
+            "year": selected_year,
+            "salary": salaries_dict.get(m),
         })
 
     return render(request, "worker_salary_list.html", {
         "worker": worker,
         "months_data": months_data,
+        "year_list": year_list,
+        "selected_year": selected_year,
     })
-
-
 
 def delete_salary_record(request, salary_id):
     salary = get_object_or_404(WorkerGrossMonthly, pk=salary_id)
