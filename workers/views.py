@@ -2,7 +2,7 @@ from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
 from .forms import WorkersForm, GrossSalaryBulkForm, WorkerGrossMonthlyForm, WorkerImportForm
 from django.core.paginator import Paginator
 from django.contrib import messages
-from .models import Workers, ArchivedWorker, WorkerGrossMonthly
+from .models import Workers, ArchivedWorker, WorkerGrossMonthly, ArchivedWorkerGrossMonthly
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from .lookups import Group, ShortClass, DirectorName, Currency, WorkClass, ClassName, Department, CostCenter, ExitReason
@@ -141,27 +141,49 @@ def deleteWorkers(request, id):
     exit_reason_id = request.POST.get("exit_reason")
     exit_reason = ExitReason.objects.filter(id=exit_reason_id).first()
 
+    archived_worker = ArchivedWorker.objects.filter(sicil_no=worker.sicil_no).first()
+
     # ArchivedWorker creation
-    archived_worker = ArchivedWorker.objects.create(
-        original_id=worker.id,
-        created_date=worker.created_date,
-        author=worker.author,
-        group=worker.group,
-        sicil_no=worker.sicil_no,
-        s_no=worker.s_no,
-        department_short_name=worker.department_short_name,
-        department=worker.department,
-        short_class=worker.short_class,
-        name_surname=worker.name_surname,
-        date_of_recruitment=worker.date_of_recruitment,
-        work_class=worker.work_class,
-        class_name=worker.class_name,
-        gross_payment=worker.gross_payment,
-        currency=worker.currency,
-        bonus=worker.bonus,
-        exit_date=exit_date,
-        exit_reason=exit_reason
-    )
+    if archived_worker is None:
+        # İlk kez arşivleniyor
+        archived_worker = ArchivedWorker.objects.create(
+            original_id=worker.id,
+            created_date=worker.created_date,
+            author=worker.author,
+            group=worker.group,
+            sicil_no=worker.sicil_no,
+            s_no=worker.s_no,
+            department_short_name=worker.department_short_name,
+            department=worker.department,
+            short_class=worker.short_class,
+            name_surname=worker.name_surname,
+            date_of_recruitment=worker.date_of_recruitment,
+            work_class=worker.work_class,
+            class_name=worker.class_name,
+            gross_payment=worker.gross_payment,
+            currency=worker.currency,
+            bonus=worker.bonus,
+            exit_date=exit_date,
+            exit_reason=exit_reason
+        )
+    else:
+        # Daha önce arşivlenmiş olabilir → son bilgileri güncelle
+        archived_worker.group = worker.group
+        archived_worker.s_no = worker.s_no
+        archived_worker.department_short_name = worker.department_short_name
+        archived_worker.department = worker.department
+        archived_worker.short_class = worker.short_class
+        archived_worker.name_surname = worker.name_surname
+        archived_worker.date_of_recruitment = worker.date_of_recruitment
+        archived_worker.work_class = worker.work_class
+        archived_worker.class_name = worker.class_name
+        archived_worker.gross_payment = worker.gross_payment
+        archived_worker.currency = worker.currency
+        archived_worker.bonus = worker.bonus
+        archived_worker.exit_date = exit_date
+        archived_worker.exit_reason = exit_reason
+        archived_worker.save()
+
 
     # Worker’a ait Benefit kayıtlarını arşivle
     benefits = Benefit.objects.filter(worker=worker)
@@ -188,12 +210,34 @@ def deleteWorkers(request, id):
     # Orijinal benefit kayıtlarını sil
     benefits.delete()
 
+    # Worker’a ait maaş kayıtlarını al
+    salaries = WorkerGrossMonthly.objects.filter(worker=worker)
+    archived_salaries = []
+
+    for s in salaries:
+        archived_salaries.append(ArchivedWorkerGrossMonthly(
+            archived_worker=archived_worker,
+            year=s.year,
+            month=s.month,
+            gross_salary=s.gross_salary,
+            currency=s.currency,
+            sicil_no=s.sicil_no,
+            created_at=s.created_at,
+            updated_at=s.updated_at,
+        ))
+
+    if archived_salaries:
+        ArchivedWorkerGrossMonthly.objects.bulk_create(archived_salaries)
+
+    # Orijinal maaş kayıtlarını sil
+    salaries.delete()
+
     # Worker kaydını sil
     worker.delete()
 
     messages.success(
         request,
-        f"Sicil No:{worker.sicil_no} - {worker.name_surname} deleted and archived (including benefits)."
+        f"Sicil No:{worker.sicil_no} - {worker.name_surname} deleted and archived (including benefits & all salaries)."
     )
     return redirect("workers:dashboard")
 
@@ -351,7 +395,7 @@ def update_salary_record(request, salary_id):
             # Ay: bazen "1.0" gibi gelebiliyor → float → int
             raw_month = request.GET.get("month", "")
             month = int(float(raw_month)) if raw_month else datetime.date.today().month
-            
+
             worker = get_object_or_404(Workers, id=worker_id)
 
             # şimdi create edilebilir

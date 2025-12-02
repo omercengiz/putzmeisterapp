@@ -321,3 +321,26 @@ class WorkerGrossMonthly(models.Model):
         if self.worker and not self.sicil_no:
             self.sicil_no = self.worker.sicil_no
         super().save(*args, **kwargs)
+
+
+class ArchivedWorkerGrossMonthly(models.Model):
+    archived_worker = models.ForeignKey(
+        ArchivedWorker,
+        on_delete=models.CASCADE,
+        related_name="archived_monthly_salaries"
+    )
+
+    year = models.PositiveIntegerField()
+    month = models.PositiveIntegerField()
+    gross_salary = models.DecimalField(max_digits=15, decimal_places=2)
+    currency = models.ForeignKey("Currency", null=True, blank=True, on_delete=models.SET_NULL)
+    sicil_no = models.CharField(max_length=50, null=True, blank=True)
+
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "archived_worker_gross_monthly"
+
+    def __str__(self):
+        return f"Archived Salary: {self.sicil_no} - {self.month}/{self.year}"
