@@ -67,12 +67,12 @@ class GrossSalaryBulkForm(forms.Form):
         label="Aynı ay zaten varsa değerleri güncelle (overwrite)."
     )
 
-    # 🔑 Burada initial vermiyoruz ki "0" değerinden dolayı override engellenmesin
+    # Burada initial vermiyoruz ki "0" değerinden dolayı override engellenmesin
     gross_salary = forms.DecimalField(
         label="Gross Salary", max_digits=15, decimal_places=2, min_value=Decimal('0')
     )
 
-    # 🔑 Currency FK dropdown
+    # Currency FK dropdown
     currency = forms.ModelChoiceField(
         queryset=Currency.objects.all(),
         required=False,
