@@ -34,6 +34,13 @@ class WorkersForm(forms.ModelForm):
         super(WorkersForm, self).__init__(*args, **kwargs)
         self.fields['group'].empty_label = "Please select a group"
 
+        # Eğer instance.pk varsa add mode
+        if self.instance and self.instance.pk:
+            self.fields['update_date_user'].required = True
+        else:
+            # instance.pk yoksa update mode
+            self.fields['update_date_user'].required = False
+
 
 MONTH_CHOICES = [(m, calendar.month_name[m]) for m in range(1, 13)]
 

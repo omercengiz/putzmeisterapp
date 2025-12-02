@@ -240,7 +240,7 @@ class BaseWorker(models.Model):
     date_of_recruitment = models.DateTimeField()
     gross_payment = models.DecimalField(max_digits=15, decimal_places=2)
     total_work_hours = models.DecimalField(max_digits=10, decimal_places=1, null=True, blank=True, verbose_name="Total Work Hours")
-    update_date_user = models.DateField(null=True)
+    update_date_user = models.DateField(null=True, blank=True)
 
     
     bonus = models.IntegerField(validators=[
