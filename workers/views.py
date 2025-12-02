@@ -292,73 +292,102 @@ def bulk_set_gross_salaries(request):
 
 @login_required
 def update_salary_record(request, salary_id):
-    """
-    Eğer maaş kaydı yoksa yeni oluşturur, varsa günceller.
-    Currency alanı otomatik olarak worker'dan alınır ve değiştirilemez.
-    """
-    # 1️⃣ Yeni mi var mı kontrol et
-    if salary_id == 0:
-        worker_id = request.GET.get("worker_id")
-        month = request.GET.get("month")
-        year = request.GET.get("year")
 
-        if not worker_id or not month or not year:
-            messages.error(request, "Eksik parametre.")
-            return redirect("workers:dashboard")
+    # Yeni kayıt mı kontrolü
+    is_new_record = (salary_id == 0)
 
-        # Güvenli dönüştürme
-        try:
-            year = int(year) if str(year).isdigit() else datetime.date.today().year
-            month = int(float(month)) if month else datetime.date.today().month
-        except (ValueError, TypeError):
-            messages.error(request, f"Invalid year/month value: {year}/{month}")
-            return redirect("workers:dashboard")
+    # -----------------------------
+    # 1. GET – Formu sadece göster
+    # -----------------------------
+    if request.method == "GET":
+        if is_new_record:
+            worker_id = request.GET.get("worker_id")
+            #month = int(request.GET.get("month"))
+            #year = int(request.GET.get("year"))
+            # Yıl bazen "2.025" gibi gelebiliyor → sadece rakamları al
+            raw_year = request.GET.get("year", "")
+            year = int("".join(filter(str.isdigit, raw_year))) if raw_year else datetime.date.today().year
 
-        # just get the worker 
-        worker = get_object_or_404(Workers, pk=worker_id)
+            # Ay: bazen "1.0" gibi gelebiliyor → float → int
+            raw_month = request.GET.get("month", "")
+            month = int(float(raw_month)) if raw_month else datetime.date.today().month
 
-        # get or create salary
-        salary, _ = WorkerGrossMonthly.objects.get_or_create(
-            worker=worker,
-            year=year,
-            month=month,
-            defaults={
-                "gross_salary": worker.gross_payment or 0,
-                "currency": worker.currency,  # assign automatically from worker 
-            },
-        )
-    else:
-        salary = get_object_or_404(WorkerGrossMonthly, id=salary_id)
-        worker = salary.worker
+            worker = get_object_or_404(Workers, id=worker_id)
 
-    # 2️⃣ Form işlemleri
-    if request.method == "POST":
-        form = WorkerGrossMonthlyForm(request.POST, instance=salary)
+            # GET aşamasında kesinlikle kayıt oluşturulmuyor!
+            salary = WorkerGrossMonthly(
+                worker=worker,
+                year=year,
+                month=month,
+                gross_salary=worker.gross_payment or 0,
+                currency=worker.currency,
+            )
+        else:
+            salary = get_object_or_404(WorkerGrossMonthly, id=salary_id)
+            worker = salary.worker
 
-        # Kullanıcı currency'i değiştirmeye çalışsa bile override et
-        salary.currency = worker.currency
-
-        if form.is_valid():
-            updated = form.save(commit=False)
-            updated.currency = worker.currency  
-            updated.save()
-            messages.success(request, "Salary record saved successfully.")
-            return redirect("workers:list_worker_salaries", worker_id=worker.id)
-    else:
         form = WorkerGrossMonthlyForm(instance=salary)
-        # lock the currency field bc it's auto-set from worker
-        if "currency" in form.fields:
-            form.fields["currency"].disabled = True
+        form.fields["currency"].disabled = True
 
-    return render(
-        request,
-        "update_salary.html",
-        {
+        return render(request, "update_salary.html", {
             "form": form,
             "salary": salary,
             "worker": worker,
-        },
-    )
+        })
+
+    # -----------------------------
+    # 2. POST – Save işlemi
+    # -----------------------------
+    if request.method == "POST":
+
+        if is_new_record:
+            worker_id = request.GET.get("worker_id")
+            #month = int(request.GET.get("month"))
+            #year = int(request.GET.get("year"))
+
+            raw_year = request.GET.get("year", "")
+            year = int("".join(filter(str.isdigit, raw_year))) if raw_year else datetime.date.today().year
+
+            # Ay: bazen "1.0" gibi gelebiliyor → float → int
+            raw_month = request.GET.get("month", "")
+            month = int(float(raw_month)) if raw_month else datetime.date.today().month
+            
+            worker = get_object_or_404(Workers, id=worker_id)
+
+            # şimdi create edilebilir
+            salary, _ = WorkerGrossMonthly.objects.get_or_create(
+                worker=worker,
+                year=year,
+                month=month,
+                defaults={
+                    "gross_salary": worker.gross_payment or 0,
+                    "currency": worker.currency,
+                    "sicil_no": worker.sicil_no
+                }
+            )
+        else:
+            salary = get_object_or_404(WorkerGrossMonthly, id=salary_id)
+            worker = salary.worker
+
+        form = WorkerGrossMonthlyForm(request.POST, instance=salary)
+        form.fields["currency"].disabled = True
+
+        if form.is_valid():
+            updated = form.save(commit=False)
+            updated.currency = worker.currency
+            updated.sicil_no = worker.sicil_no  # güvenlik
+            updated.save()
+
+            messages.success(request, "Salary record saved successfully.")
+            return redirect("workers:list_worker_salaries", worker_id=worker.id)
+
+        # Form geçersizse tekrar yüklenir
+        return render(request, "update_salary.html", {
+            "form": form,
+            "salary": salary,
+            "worker": worker,
+        })
+
 
 
 
