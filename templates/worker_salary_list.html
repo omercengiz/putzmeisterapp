@@ -25,39 +25,53 @@
 
   <div class="card shadow-sm mb-4">
     <div class="card-body">
-      <h5 class="card-title">{{ worker.name_surname }}</h5>
 
-      <p class="mb-1"><strong>Sicil No:</strong> {{ worker.sicil_no }}</p>
-      <p class="mb-1"><strong>Tanımlı Gross Payment:</strong> 
-          {{ worker.gross_payment|floatformat:2|localize }}
-      </p>
-      <p class="mb-1"><strong>Currency:</strong> {{ worker.currency }}</p>
+      <h5 class="card-title mb-3">{{ worker.name_surname }}</h5>
 
-      <!-- ✔ Bonus -->
-      <p class="mb-1"><strong>Bonus:</strong> {{ worker.bonus }}</p>
+      <div class="row">
 
-      <!-- ✔ Department -->
-      <p class="mb-1"><strong>Department:</strong> {{ worker.department }}</p>
+        <!-- Sol Sütun -->
+        <div class="col-md-6">
+          <p class="mb-1"><strong>Sicil No:</strong> {{ worker.sicil_no }}</p>
+          <p class="mb-1">
+            <strong>Tanımlı Gross Payment:</strong> 
+            {{ worker.gross_payment|floatformat:2|localize }}
+          </p>
+          <p class="mb-1"><strong>Currency:</strong> {{ worker.currency }}</p>
+          <p class="mb-1"><strong>Bonus:</strong> {{ worker.bonus }}</p>
+        </div>
 
-      <!-- ✔ Total Hours -->
-      <p class="mb-1"><strong>Total Hours:</strong> 
-          {% if worker.total_work_hours %}
+        <!-- Sağ Sütun -->
+        <div class="col-md-6">
+          <p class="mb-1">
+            <strong>Department:</strong> 
+            {% if worker.department %}{{ worker.department }}{% else %}<span class="text-muted">Not assigned</span>{% endif %}
+          </p>
+
+          <p class="mb-1">
+            <strong>Total Hours:</strong> 
+            {% if worker.total_work_hours %}
               {{ worker.total_work_hours }}
-          {% else %}
+            {% else %}
               <span class="text-muted">Not entered</span>
-          {% endif %}
-      </p>
+            {% endif %}
+          </p>
 
-      <!-- ✔ Last update -->
-      <p class="mb-0"><strong>Last Update:</strong>
-          {% if worker.update_date_user %}
+          <p class="mb-1">
+            <strong>Last Update:</strong> 
+            {% if worker.update_date_user %}
               {{ worker.update_date_user }}
-          {% else %}
+            {% else %}
               <span class="text-muted">Not updated</span>
-          {% endif %}
-      </p>
+            {% endif %}
+          </p>
+        </div>
+
+      </div>
+
     </div>
   </div>
+
 
 
   <!-- Maaş Tablosu -->
