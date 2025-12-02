@@ -273,12 +273,12 @@ def bulk_set_gross_salaries(request):
                 if overwrite:
                     WorkerGrossMonthly.objects.update_or_create(
                         worker=worker, year=year, month=m,
-                        defaults={'gross_salary': gross_salary},
+                        defaults={'gross_salary': gross_salary, 'currency': worker.currency},
                     )
                 else:
                     WorkerGrossMonthly.objects.get_or_create(
                         worker=worker, year=year, month=m,
-                        defaults={'gross_salary': gross_salary},
+                        defaults={'gross_salary': gross_salary, 'currency': worker.currency},
                     )
 
             messages.success(request, f"{worker.sicil_no} ({worker.name_surname}) için kayıtlar güncellendi.")
