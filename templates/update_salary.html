@@ -3,24 +3,34 @@
 
 {% block body %}
 
+{% url 'workers:list_worker_salaries' worker.id as salary_list_url %}
+
 <div class="container mt-4">
-  <h3>Maaş Kaydını Güncelle</h3>
+  <h3>Update Salary</h3>
   <hr>
 
-  <div class="card shadow-sm p-3">
-    <form method="post">
+  <div class="card shadow-sm p-4">
+
+    <form method="post" novalidate>
       {% csrf_token %}
       {{ form|crispy }}
 
-      <div class="mt-3 d-flex justify-content-end gap-2">
-        <a href="{% url 'workers:list_worker_salaries' salary.worker.id %}" class="btn btn-secondary">
-          İptal
-        </a>
-        <button type="submit" class="btn btn-success">
-          Kaydet
+      <div class="mt-4 d-flex justify-content-end gap-2">
+
+        <button
+          type="button"
+          class="btn btn-secondary"
+          onclick="window.location.href='{{ salary_list_url }}'">
+          Cancel
         </button>
+
+        <button type="submit" class="btn btn-success">
+          Update
+        </button>
+
       </div>
     </form>
+
   </div>
 </div>
 

@@ -21,15 +21,25 @@ class WorkersForm(forms.ModelForm):
             "class_name",
             "gross_payment",
             "currency",
-            "bonus"
+            "bonus",
+            "total_work_hours",
+            "update_date_user"
         ]
         widgets = {
-            'date_of_recruitment': forms.DateInput(format="%Y-%m-%d", attrs={'type': 'date'})
+            'date_of_recruitment': forms.DateInput(format="%Y-%m-%d", attrs={'type': 'date'}),
+            'update_date_user': forms.DateInput(format="%Y-%m-%d", attrs={'type': 'date'})
         }
 
     def __init__(self, *args, **kwargs):
         super(WorkersForm, self).__init__(*args, **kwargs)
         self.fields['group'].empty_label = "Please select a group"
+
+        # Eğer instance.pk varsa add mode
+        if self.instance and self.instance.pk:
+            self.fields['update_date_user'].required = True
+        else:
+            # instance.pk yoksa update mode
+            self.fields['update_date_user'].required = False
 
 
 MONTH_CHOICES = [(m, calendar.month_name[m]) for m in range(1, 13)]
@@ -57,12 +67,12 @@ class GrossSalaryBulkForm(forms.Form):
         label="Aynı ay zaten varsa değerleri güncelle (overwrite)."
     )
 
-    # 🔑 Burada initial vermiyoruz ki "0" değerinden dolayı override engellenmesin
+    # Burada initial vermiyoruz ki "0" değerinden dolayı override engellenmesin
     gross_salary = forms.DecimalField(
         label="Gross Salary", max_digits=15, decimal_places=2, min_value=Decimal('0')
     )
 
-    # 🔑 Currency FK dropdown
+    # Currency FK dropdown
     currency = forms.ModelChoiceField(
         queryset=Currency.objects.all(),
         required=False,

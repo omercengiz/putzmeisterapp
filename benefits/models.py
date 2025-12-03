@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator
+from workers.models import ArchivedWorker
 
 class Benefit(models.Model):
     # Workers.sicil_no (unique) 
@@ -48,3 +49,26 @@ class Benefit(models.Model):
     @property
     def group_name(self):
         return str(self.worker.group) if self.worker.group else ""
+
+
+class ArchivedBenefit(models.Model):
+    archived_worker = models.ForeignKey(ArchivedWorker, on_delete=models.CASCADE, related_name='archived_benefits')
+    sicil_no = models.CharField(max_length=50)
+    period = models.DateField()
+    aile_yakacak = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    erzak = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    altin = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    bayram = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    dogum_evlenme = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    fon = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    harcirah = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    yol_parasi = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    prim = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "archived_benefits"
+
+    def __str__(self):
+        return f"{self.sicil_no} - {self.name_surname} ({self.period})"

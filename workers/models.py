@@ -5,12 +5,18 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 import calendar
 from .lookups import (
     Group, ShortClass, DirectorName, Currency,
-    WorkClass, ClassName, Department, CostCenter
+    WorkClass, ClassName, Department, CostCenter, ExitReason
 )
 
 
 
 class BaseWorker(models.Model):
+
+    """
+    These are templates that will be inherited by Workers and ArchivedWorkers,
+    List has been updated as a lookup tables on db
+    They will be deleted at the end of the development phase issue -> Drop list(inner tuples) all #8
+    """
     GROUP_CHOICES = [
         ('PTR', 'PTR'),
         ('SNY', 'SNY'),
@@ -234,6 +240,9 @@ class BaseWorker(models.Model):
     name_surname = models.CharField(max_length=100)
     date_of_recruitment = models.DateTimeField()
     gross_payment = models.DecimalField(max_digits=15, decimal_places=2)
+    total_work_hours = models.DecimalField(max_digits=10, decimal_places=1, null=True, blank=True, verbose_name="Total Work Hours")
+    update_date_user = models.DateField(null=True, blank=True)
+
     
     bonus = models.IntegerField(validators=[
         MinValueValidator(0),
@@ -259,6 +268,7 @@ class ArchivedWorker(BaseWorker):
     created_date = models.DateTimeField()
     deleted_at = models.DateTimeField(auto_now_add=True)
     exit_date = models.DateField(null=True, blank=True) # İşçinin çıkış tarihi olacak
+    exit_reason = models.ForeignKey(ExitReason, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         db_table = "archived_workers"
@@ -281,6 +291,8 @@ class WorkerGrossMonthly(models.Model):
 
     gross_salary = models.DecimalField(max_digits=15, decimal_places=2)
     currency = models.ForeignKey("Currency", null=True, blank=True, on_delete=models.SET_NULL)  # 🔑 burası eklendi
+    sicil_no = models.CharField(max_length=50, null=True, blank=True)
+
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -293,13 +305,42 @@ class WorkerGrossMonthly(models.Model):
         return f"{self.worker.name_surname} ({self.worker.sicil_no}) - {self.month}/{self.year}: {self.gross_salary}"
 
     @property
-    def sicil_no(self):
+    def worker_sicil_no(self):
         return self.worker.sicil_no
 
     @property
-    def name_surname(self):
+    def worker_name_surname(self):
         return self.worker.name_surname
     
     @property
     def month_name(self):
         return calendar.month_name[self.month]
+    
+    def save(self, *args, **kwargs):
+        # Yeni kayıt veya sicil_no henüz yazılmamışsa
+        if self.worker and not self.sicil_no:
+            self.sicil_no = self.worker.sicil_no
+        super().save(*args, **kwargs)
+
+
+class ArchivedWorkerGrossMonthly(models.Model):
+    archived_worker = models.ForeignKey(
+        ArchivedWorker,
+        on_delete=models.CASCADE,
+        related_name="archived_monthly_salaries"
+    )
+
+    year = models.PositiveIntegerField()
+    month = models.PositiveIntegerField()
+    gross_salary = models.DecimalField(max_digits=15, decimal_places=2)
+    currency = models.ForeignKey("Currency", null=True, blank=True, on_delete=models.SET_NULL)
+    sicil_no = models.CharField(max_length=50, null=True, blank=True)
+
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "archived_worker_gross_monthly"
+
+    def __str__(self):
+        return f"Archived Salary: {self.sicil_no} - {self.month}/{self.year}"

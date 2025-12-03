@@ -15,32 +15,29 @@ class BenefitForm(forms.ModelForm):
         to_field_name='sicil_no',
         required=True,
         label='Sicil No (Worker)',
-        help_text='Çalışanı seçin.',
         empty_label="— Select Worker —",
     )
 
-    # YYYY-MM formatını kabul edip input’u <input type="month"> olarak render eder
     period = forms.DateField(
         input_formats=['%Y-%m'],
         widget=forms.DateInput(format='%Y-%m', attrs={'type': 'month', 'placeholder': 'YYYY-AA'}),
         label='Benefit Period',
         required=True,
-        error_messages={'invalid': 'Geçerli bir ay seçin (YYYY-AA).'},
+        error_messages={'invalid': 'Please select a date with the valid format (YYYY-AA).'},
     )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Dropdown'da sadece sicil_no görünsün
         self.fields['worker'].label_from_instance = lambda obj: (obj.sicil_no or "").strip()
-        # Sayısal alanların min/step ayarı
+
         for f in ['aile_yakacak', 'erzak', 'altin', 'bayram',
                   'dogum_evlenme', 'fon', 'harcirah', 'yol_parasi', 'prim']:
             self.fields[f].widget = forms.NumberInput(attrs={'step': '0.01', 'min': '0'})
 
     def clean_period(self):
         """
-        type="month" ile gelen 'YYYY-MM' değeri DateField tarafından zaten
-        1. gün olarak (YYYY-MM-01) parse edilir; yine de garanti altına alıyoruz.
+        type="month" ile gelen 'YYYY-MM' değeri DateField tarafından 
+        1. gün olarak (YYYY-MM-01) parse edilir
         """
         val = self.cleaned_data.get('period')
         if isinstance(val, datetime.date):
@@ -73,7 +70,7 @@ class BenefitForm(forms.ModelForm):
 
 # -------- Bulk monthly form --------
 
-MONTH_CHOICES = [(m, calendar.month_name[m]) for m in range(1, 13)]  # 1..12
+MONTH_CHOICES = [(m, calendar.month_name[m]) for m in range(1, 13)]  
 
 
 class BenefitBulkForm(forms.Form):

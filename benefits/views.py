@@ -142,6 +142,7 @@ def import_benefits(request):
                     "bayram", "dogum_evlenme", "fon", "harcirah", "yol_parasi", "prim"
                 ]
                 missing = [c for c in required_columns if c not in df.columns]
+                
                 if missing:
                     messages.error(request, f"Missing columns: {', '.join(missing)}")
                     return redirect("benefits:import_benefits")
