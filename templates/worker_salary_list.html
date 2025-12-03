@@ -4,39 +4,60 @@
 {% block body %}
 <div class="container mt-4">
 
-  <div class="d-flex justify-content-between align-items-center mb-3">
-      <h3 class="mb-0">Salary Details</h3>
+  <!-- Başlık + Filtre Bar -->
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
 
-      <!-- YIL FİLTRESİ -->
-      <form method="get" class="d-flex align-items-center">
-        <label class="me-2 fw-bold">Year:</label>
+    <h3 class="mb-0">Salary Details</h3>
 
-        {% localize off %}
-        <select name="year" class="form-select w-auto" onchange="this.form.submit()">
-          {% for y in year_list %}
-            <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>
-              {{ y }}
-            </option>
-          {% endfor %}
-        </select>
-        {% endlocalize %}
-      </form>
+    <form method="get" class="d-flex align-items-end gap-3 flex-wrap">
+
+        <!-- Worker Search -->
+        <div>
+            <label class="fw-bold">Worker Search:</label>
+            <input type="text"
+                  name="worker_search"
+                  value="{{ worker_search }}"
+                  placeholder="Name or Sicil No"
+                  class="form-control"
+                  style="width: 260px;">
+        </div>
+
+        <!-- Year Filter -->
+        <div>
+            <label class="fw-bold">Year:</label>
+            {% localize off %}
+            <select name="year" class="form-select w-auto" onchange="this.form.submit()">
+                {% for y in year_list %}
+                    <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+            {% endlocalize %}
+        </div>
+
+        <!-- Submit -->
+        <div>
+            <button type="submit" class="btn btn-primary mt-4">Filter</button>
+        </div>
+
+    </form>
+
   </div>
 
+
+
+  <!-- Çalışan Bilgisi Kartı -->
   <div class="card shadow-sm mb-4">
     <div class="card-body">
 
-      <h5 class="card-title mb-3">{{ worker.name_surname }}</h5>
+      <h5 class="card-title mb-3">
+        {{ worker.name_surname }} – {{ worker.sicil_no }}
+      </h5>
 
       <div class="row">
 
         <!-- Sol Sütun -->
         <div class="col-md-6">
-          <p class="mb-1"><strong>Sicil No:</strong> {{ worker.sicil_no }}</p>
-          <p class="mb-1">
-            <strong>Tanımlı Gross Payment:</strong> 
-            {{ worker.gross_payment|floatformat:2|localize }}
-          </p>
+          <p class="mb-1"><strong>Tanımlı Gross Payment:</strong> {{ worker.gross_payment|floatformat:2|localize }}</p>
           <p class="mb-1"><strong>Currency:</strong> {{ worker.currency }}</p>
           <p class="mb-1"><strong>Bonus:</strong> {{ worker.bonus }}</p>
         </div>
@@ -44,12 +65,13 @@
         <!-- Sağ Sütun -->
         <div class="col-md-6">
           <p class="mb-1">
-            <strong>Department:</strong> 
-            {% if worker.department %}{{ worker.department }}{% else %}<span class="text-muted">Not assigned</span>{% endif %}
+            <strong>Department:</strong>
+            {% if worker.department %}{{ worker.department }}
+            {% else %}<span class="text-muted">Not assigned</span>{% endif %}
           </p>
 
           <p class="mb-1">
-            <strong>Total Hours:</strong> 
+            <strong>Total Hours:</strong>
             {% if worker.total_work_hours %}
               {{ worker.total_work_hours }}
             {% else %}
@@ -58,7 +80,7 @@
           </p>
 
           <p class="mb-1">
-            <strong>Last Update:</strong> 
+            <strong>Last Update:</strong>
             {% if worker.update_date_user %}
               {{ worker.update_date_user }}
             {% else %}
@@ -74,7 +96,7 @@
 
 
 
-  <!-- Maaş Tablosu -->
+  <!-- Salary Table -->
   <div class="card shadow-sm">
     <div class="card-body">
 
@@ -87,13 +109,18 @@
             <th class="text-center">Process</th>
           </tr>
         </thead>
+
         <tbody>
           {% for row in months_data %}
           <tr>
             <td>{{ row.month }}</td>
+
             <td>
-              {% localize off %}{{ row.year }}{% endlocalize %}
+              {% localize off %}
+                {{ row.year }}
+              {% endlocalize %}
             </td>
+
             <td class="text-end">
               {% if row.salary %}
                   {{ row.salary.gross_salary|floatformat:2|localize }}
@@ -101,13 +128,17 @@
                   <span class="text-muted">There is no salary for this month</span>
               {% endif %}
             </td>
+
             <td class="text-center">
               <div class="d-flex justify-content-center gap-2">
+
+                <!-- Update / Add -->
                 <a href="{% url 'workers:update_salary_record' row.salary.id|default:0 %}?worker_id={{ worker.id }}&month={{ row.month_num }}&year={{ row.year }}"
                    class="btn btn-sm btn-primary">
                     {% if row.salary %}Update{% else %}Add{% endif %}
                 </a>
 
+                <!-- Delete -->
                 {% if row.salary %}
                 <a href="{% url 'workers:delete_salary_record' row.salary.id %}"
                    class="btn btn-sm btn-danger"
@@ -115,11 +146,14 @@
                    Delete
                 </a>
                 {% endif %}
+
               </div>
             </td>
+
           </tr>
           {% endfor %}
         </tbody>
+
       </table>
 
     </div>

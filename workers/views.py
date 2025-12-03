@@ -432,40 +432,54 @@ def update_salary_record(request, salary_id):
             "worker": worker,
         })
 
-
 def list_worker_salaries(request, worker_id):
-    worker = get_object_or_404(Workers, id=worker_id)
+    worker_search = request.GET.get("worker_search", "").strip()
 
-    # YIL FİLTRESİ
-    selected_year = request.GET.get("year")
-    current_year = datetime.date.today().year
+    # --- Worker Search WITHOUT redirect ---
+    if worker_search:
+        workers = (
+            Workers.objects.filter(name_surname__icontains=worker_search)
+            | Workers.objects.filter(sicil_no__icontains=worker_search)
+        )
 
-    try:
-        selected_year = int(selected_year) if selected_year else current_year
-    except:
-        selected_year = current_year
+        # Eğer arama sonucu bulunursa gösterilecek worker'ı değiştir
+        found_worker = workers.first()
+        if found_worker:
+            worker = found_worker
+        else:
+            messages.warning(request, "No matching worker found.")
+            worker = get_object_or_404(Workers, id=worker_id)
+    else:
+        worker = get_object_or_404(Workers, id=worker_id)
 
-    # Dropdownda göstermek için
-    year_list = list(range(2015, current_year + 1))
+    # --- Year Filter ---
+    raw_year = request.GET.get("year", datetime.date.today().year)
+    selected_year = int("".join(filter(str.isdigit, str(raw_year)))) or datetime.date.today().year
+
+    year_list = list(range(2020, datetime.date.today().year + 1))
 
     salaries = WorkerGrossMonthly.objects.filter(worker=worker, year=selected_year)
     salaries_dict = {s.month: s for s in salaries}
 
+    # --- months_data (month_num EKLENDİ) ---
     months_data = []
     for m in range(1, 13):
         months_data.append({
             "month": calendar.month_name[m],
             "month_num": m,
             "year": selected_year,
-            "salary": salaries_dict.get(m),
+            "salary": salaries_dict.get(m)
         })
 
     return render(request, "worker_salary_list.html", {
         "worker": worker,
         "months_data": months_data,
-        "year_list": year_list,
         "selected_year": selected_year,
+        "year_list": year_list,
+        "worker_search": worker_search,
     })
+
+
 
 def delete_salary_record(request, salary_id):
     salary = get_object_or_404(WorkerGrossMonthly, pk=salary_id)
