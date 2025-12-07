@@ -8,38 +8,62 @@ from .models import Benefit
 from workers.models import Workers
 from .forms import BenefitForm, BenefitBulkForm, BenefitImportForm
 import pandas as pd
+import datetime
 
 
 @login_required
 def benefit_list(request):
     q = request.GET.get('q')
-    period = request.GET.get('period')
-    qs = Benefit.objects.select_related('worker', 'worker__group', 'worker__s_no').all()
+    year = request.GET.get('year')
+    month = request.GET.get('month')
 
+    qs = Benefit.objects.select_related("worker", "worker__group", "worker__s_no").all()
+
+    # Search filters
     if q:
-        # sicil_no veya isimden arasın 
-        qs = qs.filter(worker__sicil_no__icontains=q) | qs.filter(worker__name_surname__icontains=q)
+        qs = qs.filter(
+            worker__sicil_no__icontains=q
+        ) | qs.filter(
+            worker__name_surname__icontains=q
+        )
 
-        
+    if year:
+        qs = qs.filter(year=year)
 
-    if period:
-        try:
-            start = datetime.strptime(period, "%Y-%m").date()
-            end_month = (start.replace(day=28) + timedelta(days=4)).replace(day=1)  # sonraki ayın 1'i
-            qs = qs.filter(period__gte=start, period__lt=end_month)
-        except ValueError:
-            pass  # yanlış tarih formatı varsa ignore et
+    if month:
+        qs = qs.filter(month=month)
 
     qs = qs.order_by('worker__sicil_no')
+
     paginator = Paginator(qs, 12)
-    page = request.GET.get('page')
-    page_obj = paginator.get_page(page)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    year_list = list(range(2020, datetime.date.today().year + 1))
+    month_list = [
+        (1, "January"), (2, "February"), (3, "March"),
+        (4, "April"), (5, "May"), (6, "June"),
+        (7, "July"), (8, "August"), (9, "September"),
+        (10, "October"), (11, "November"), (12, "December"),
+    ]
+
+    month_dict = {
+        1: "January", 2: "February", 3: "March",
+        4: "April", 5: "May", 6: "June",
+        7: "July", 8: "August", 9: "September",
+        10: "October", 11: "November", 12: "December",
+    }
+
 
     return render(request, 'benefits/benefit_list.html', {
-        'page_obj': page_obj,
-        'query': q or '',
-        'selected_period': period or '',
+        "page_obj": page_obj,
+        "query": q or "",
+        "selected_year": year or "",
+        "selected_month": month or "",
+        "year_list": year_list,
+        "month_list": month_list,
+        "month_dict": month_dict, 
     })
+
 
 @login_required
 def benefit_create(request):
@@ -51,7 +75,7 @@ def benefit_create(request):
             return redirect('benefits:list')
         except IntegrityError:
             # OneToOne 
-            form.add_error('period', 'This worker already has a benefit record for this month.')
+            form.add_error('month', 'This worker already has a benefit record for this year/month.')
     return render(request, 'benefits/benefit_form.html', {'form': form, 'title': 'New Benefit'})
 
 @login_required
@@ -64,7 +88,7 @@ def benefit_update(request, pk):
             messages.success(request, "Information of Benefits updated successfully.")
             return redirect('benefits:list')
         except IntegrityError:
-            form.add_error('worker', 'There is already a benefit record for this employee.')
+            form.add_error('month', 'There is already a benefit record for this employee for that year/month.')
     return render(request, 'benefits/benefit_form.html', {'form': form, 'title': 'Update Benefit'})
 
 @login_required
@@ -100,12 +124,11 @@ def benefit_bulk(request):
 
         with transaction.atomic():
             for m in months:
-                period = date(year, m, 1)
                 if overwrite:
-                    # Upsert: varsa güncelle, yoksa oluştur
                     obj, created = Benefit.objects.update_or_create(
                         worker=worker,
-                        period=period,
+                        year=year,
+                        month=m,
                         defaults=defaults_common
                     )
                     if created:
@@ -113,10 +136,8 @@ def benefit_bulk(request):
                     else:
                         updated_count += 1
                 else:
-                    # overwrite kapalı ise: yoksa oluştur, varsa es geç
-                    obj_exists = Benefit.objects.filter(worker=worker, period=period).exists()
-                    if not obj_exists:
-                        Benefit.objects.create(worker=worker, period=period, **defaults_common)
+                    if not Benefit.objects.filter(worker=worker, year=year, month=m).exists():
+                        Benefit.objects.create(worker=worker, year=year, month=m, **defaults_common)
                         created_count += 1
 
         messages.success(
@@ -127,7 +148,6 @@ def benefit_bulk(request):
 
     return render(request, "benefits/benefit_bulk_form.html", {"form": form, "title": "Bulk Add/Update Benefits"})
 
-
 @login_required
 def import_benefits(request):
     if request.method == "POST":
@@ -137,9 +157,12 @@ def import_benefits(request):
             try:
                 df = pd.read_excel(excel_file)
 
+                # ARTIK period YOK → year + month bekliyoruz
                 required_columns = [
-                    "sicil_no", "period", "aile_yakacak", "erzak", "altin",
-                    "bayram", "dogum_evlenme", "fon", "harcirah", "yol_parasi", "prim"
+                    "sicil_no", "year", "month",
+                    "aile_yakacak", "erzak", "altin",
+                    "bayram", "dogum_evlenme", "fon",
+                    "harcirah", "yol_parasi", "prim"
                 ]
                 missing = [c for c in required_columns if c not in df.columns]
                 
@@ -147,15 +170,23 @@ def import_benefits(request):
                     messages.error(request, f"Missing columns: {', '.join(missing)}")
                     return redirect("benefits:import_benefits")
 
-                # Satırları ekle/güncelle
                 for _, row in df.iterrows():
                     worker = Workers.objects.filter(sicil_no=row["sicil_no"]).first()
                     if not worker:
-                        continue  # eşleşmeyen sicil_no varsa atla
+                        # Eşleşmeyen sicil_no → atla
+                        continue
+
+                    try:
+                        year = int(row["year"])
+                        month = int(row["month"])
+                    except (ValueError, TypeError):
+                        # Year/month okunamazsa o satırı atla
+                        continue
 
                     Benefit.objects.update_or_create(
                         worker=worker,
-                        period=row["period"],
+                        year=year,
+                        month=month,
                         defaults={
                             "aile_yakacak": row.get("aile_yakacak", 0) or 0,
                             "erzak": row.get("erzak", 0) or 0,
@@ -171,6 +202,7 @@ def import_benefits(request):
 
                 messages.success(request, "Excel import has been successfully completed. ✅")
                 return redirect('benefits:list')
+
             except Exception as e:
                 messages.error(request, f"Import Error: {str(e)}")
                 return redirect("benefits:import_benefits")

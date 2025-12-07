@@ -18,12 +18,19 @@ class BenefitForm(forms.ModelForm):
         empty_label="— Select Worker —",
     )
 
-    period = forms.DateField(
-        input_formats=['%Y-%m'],
-        widget=forms.DateInput(format='%Y-%m', attrs={'type': 'month', 'placeholder': 'YYYY-AA'}),
-        label='Benefit Period',
+    year = forms.IntegerField(
         required=True,
-        error_messages={'invalid': 'Please select a date with the valid format (YYYY-AA).'},
+        min_value=2000,
+        max_value=2100,
+        initial=datetime.date.today().year,
+        label="Year",
+        widget=forms.NumberInput(attrs={'min': '2000', 'max': '2100'})
+    )
+
+    month = forms.ChoiceField(
+        required=True,
+        choices=[(m, calendar.month_name[m]) for m in range(1, 13)],
+        label="Month"
     )
 
     def __init__(self, *args, **kwargs):
@@ -34,35 +41,25 @@ class BenefitForm(forms.ModelForm):
                   'dogum_evlenme', 'fon', 'harcirah', 'yol_parasi', 'prim']:
             self.fields[f].widget = forms.NumberInput(attrs={'step': '0.01', 'min': '0'})
 
-    def clean_period(self):
-        """
-        type="month" ile gelen 'YYYY-MM' değeri DateField tarafından 
-        1. gün olarak (YYYY-MM-01) parse edilir
-        """
-        val = self.cleaned_data.get('period')
-        if isinstance(val, datetime.date):
-            return val.replace(day=1)
-        if isinstance(val, str) and len(val) == 7:
-            return datetime.datetime.strptime(val, '%Y-%m').date().replace(day=1)
-        return val
-
     def clean(self):
         cleaned = super().clean()
         worker = cleaned.get('worker')
-        period = cleaned.get('period')
-        if worker and period:
-            exists = Benefit.objects.filter(worker=worker, period=period)\
+        year = cleaned.get('year')
+        month = cleaned.get('month')
+
+        if worker and year and month:
+            exists = Benefit.objects.filter(worker=worker, year=year, month=month)\
                                     .exclude(pk=self.instance.pk).exists()
             if exists:
-                msg = "Bu çalışan için bu ayda zaten bir kayıt var."
+                msg = "Bu çalışan için bu ayda/yılda zaten bir kayıt var."
                 self.add_error('worker', msg)
-                self.add_error('period', msg)
+                self.add_error('month', msg)
         return cleaned
 
     class Meta:
         model = Benefit
         fields = [
-            'worker', 'period',
+            'worker', 'year', 'month',
             'aile_yakacak', 'erzak', 'altin', 'bayram',
             'dogum_evlenme', 'fon', 'harcirah', 'yol_parasi', 'prim'
         ]
