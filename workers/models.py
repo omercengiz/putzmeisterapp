@@ -239,7 +239,7 @@ class BaseWorker(models.Model):
     s_no = models.ForeignKey(CostCenter, on_delete=models.SET_NULL, null=True, verbose_name="CostCenter")
     name_surname = models.CharField(max_length=100)
     date_of_recruitment = models.DateTimeField()
-    gross_payment = models.DecimalField(max_digits=15, decimal_places=2)
+    gross_payment_hourly = models.DecimalField(max_digits=15, decimal_places=2)
     total_work_hours = models.DecimalField(max_digits=10, decimal_places=1, null=True, blank=True, verbose_name="Total Work Hours")
     update_date_user = models.DateField(null=True, blank=True)
 
@@ -289,7 +289,7 @@ class WorkerGrossMonthly(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(12)]
     )
 
-    gross_salary = models.DecimalField(max_digits=15, decimal_places=2)
+    gross_salary_hourly = models.DecimalField(max_digits=15, decimal_places=2)
     currency = models.ForeignKey("Currency", null=True, blank=True, on_delete=models.SET_NULL)  # 🔑 burası eklendi
     sicil_no = models.CharField(max_length=50, null=True, blank=True)
 
@@ -302,7 +302,7 @@ class WorkerGrossMonthly(models.Model):
         unique_together = ("worker", "year", "month")
 
     def __str__(self):
-        return f"{self.worker.name_surname} ({self.worker.sicil_no}) - {self.month}/{self.year}: {self.gross_salary}"
+        return f"{self.worker.name_surname} ({self.worker.sicil_no}) - {self.month}/{self.year}: {self.gross_salary_hourly}"
 
     @property
     def worker_sicil_no(self):
@@ -332,7 +332,7 @@ class ArchivedWorkerGrossMonthly(models.Model):
 
     year = models.PositiveIntegerField()
     month = models.PositiveIntegerField()
-    gross_salary = models.DecimalField(max_digits=15, decimal_places=2)
+    gross_salary_hourly = models.DecimalField(max_digits=15, decimal_places=2)
     currency = models.ForeignKey("Currency", null=True, blank=True, on_delete=models.SET_NULL)
     sicil_no = models.CharField(max_length=50, null=True, blank=True)
 

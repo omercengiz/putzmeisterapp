@@ -160,7 +160,7 @@ def deleteWorkers(request, id):
             date_of_recruitment=worker.date_of_recruitment,
             work_class=worker.work_class,
             class_name=worker.class_name,
-            gross_payment=worker.gross_payment,
+            gross_payment_hourly=worker.gross_payment_hourly,
             currency=worker.currency,
             bonus=worker.bonus,
             exit_date=exit_date,
@@ -177,7 +177,7 @@ def deleteWorkers(request, id):
         archived_worker.date_of_recruitment = worker.date_of_recruitment
         archived_worker.work_class = worker.work_class
         archived_worker.class_name = worker.class_name
-        archived_worker.gross_payment = worker.gross_payment
+        archived_worker.gross_payment_hourly = worker.gross_payment_hourly
         archived_worker.currency = worker.currency
         archived_worker.bonus = worker.bonus
         archived_worker.exit_date = exit_date
@@ -219,7 +219,7 @@ def deleteWorkers(request, id):
             archived_worker=archived_worker,
             year=s.year,
             month=s.month,
-            gross_salary=s.gross_salary,
+            gross_salary_hourly=s.gross_salary_hourly,
             currency=s.currency,
             sicil_no=s.sicil_no,
             created_at=s.created_at,
@@ -310,19 +310,19 @@ def bulk_set_gross_salaries(request):
             worker = form.cleaned_data['worker']
             year = form.cleaned_data['year']
             months = form.cleaned_data['months']
-            gross_salary = form.cleaned_data['gross_salary']
+            gross_salary_hourly = form.cleaned_data['gross_salary_hourly']
             overwrite = form.cleaned_data['overwrite_existing']
 
             for m in months:
                 if overwrite:
                     WorkerGrossMonthly.objects.update_or_create(
                         worker=worker, year=year, month=m,
-                        defaults={'gross_salary': gross_salary, 'currency': worker.currency},
+                        defaults={'gross_salary_hourly': gross_salary_hourly, 'currency': worker.currency},
                     )
                 else:
                     WorkerGrossMonthly.objects.get_or_create(
                         worker=worker, year=year, month=m,
-                        defaults={'gross_salary': gross_salary, 'currency': worker.currency},
+                        defaults={'gross_salary_hourly': gross_salary_hourly, 'currency': worker.currency},
                     )
 
             messages.success(request, f"{worker.sicil_no} ({worker.name_surname}) için kayıtlar güncellendi.")
@@ -363,7 +363,7 @@ def update_salary_record(request, salary_id):
                 worker=worker,
                 year=year,
                 month=month,
-                gross_salary=worker.gross_payment or 0,
+                gross_salary_hourly=worker.gross_payment_hourly or 0,
                 currency=worker.currency,
             )
         else:
@@ -404,7 +404,7 @@ def update_salary_record(request, salary_id):
                 year=year,
                 month=month,
                 defaults={
-                    "gross_salary": worker.gross_payment or 0,
+                    "gross_salary_hourly": worker.gross_payment_hourly or 0,
                     "currency": worker.currency,
                     "sicil_no": worker.sicil_no
                 }
@@ -511,7 +511,7 @@ def import_workers(request):
                     "Work class": "work_class",
                     "Class name": "class_name",
                     "Department": "department",
-                    "Gross payment": "gross_payment",
+                    "Gross payment hourly": "gross_payment_hourly",
                     "Currency": "currency",
                     "Bonus": "bonus",
                 }
@@ -597,7 +597,7 @@ def import_workers(request):
                         defaults={
                             "name_surname": row.get("name_surname"),
                             "date_of_recruitment": date_val,
-                            "gross_payment": row.get("gross_payment", 0),
+                            "gross_payment_hourly": row.get("gross_payment_hourly", 0),
                             "bonus": row.get("bonus", 0),
                             "author_id": request.user.id,
                             **lookup_ids
