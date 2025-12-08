@@ -69,7 +69,7 @@ class GrossSalaryBulkForm(forms.Form):
 
     # Burada initial vermiyoruz ki "0" değerinden dolayı override engellenmesin
     gross_salary_hourly = forms.DecimalField(
-        label="Gross Salary", max_digits=15, decimal_places=2, min_value=Decimal('0')
+        label="Gross Salary Hourly", max_digits=15, decimal_places=2, min_value=Decimal('0')
     )
 
     # Currency FK dropdown
@@ -122,6 +122,7 @@ class WorkerGrossMonthlyForm(forms.ModelForm):
             "year": forms.NumberInput(attrs={"min": 2000, "max": 2100}),
             "month": forms.NumberInput(attrs={"min": 1, "max": 12}),
             "gross_salary_hourly": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
+            "gross_payment": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
         }
 
 class WorkerImportForm(forms.Form):

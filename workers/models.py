@@ -292,7 +292,7 @@ class WorkerGrossMonthly(models.Model):
     gross_salary_hourly = models.DecimalField(max_digits=15, decimal_places=2)
     currency = models.ForeignKey("Currency", null=True, blank=True, on_delete=models.SET_NULL)  # 🔑 burası eklendi
     sicil_no = models.CharField(max_length=50, null=True, blank=True)
-
+    gross_payment = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -317,9 +317,20 @@ class WorkerGrossMonthly(models.Model):
         return calendar.month_name[self.month]
     
     def save(self, *args, **kwargs):
-        # Yeni kayıt veya sicil_no henüz yazılmamışsa
+        # Sicil numarasını otomatik yaz
         if self.worker and not self.sicil_no:
             self.sicil_no = self.worker.sicil_no
+
+        days_in_month = calendar.monthrange(self.year, self.month)[1]
+        work_hours = self.worker.total_work_hours or 0
+
+        if self.gross_salary_hourly and work_hours:
+            self.gross_payment = (
+                self.gross_salary_hourly * work_hours * days_in_month
+            )
+        else:
+            self.gross_payment = None
+
         super().save(*args, **kwargs)
 
 
@@ -335,6 +346,7 @@ class ArchivedWorkerGrossMonthly(models.Model):
     gross_salary_hourly = models.DecimalField(max_digits=15, decimal_places=2)
     currency = models.ForeignKey("Currency", null=True, blank=True, on_delete=models.SET_NULL)
     sicil_no = models.CharField(max_length=50, null=True, blank=True)
+    gross_payment = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
 
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()

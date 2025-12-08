@@ -224,6 +224,7 @@ def deleteWorkers(request, id):
             sicil_no=s.sicil_no,
             created_at=s.created_at,
             updated_at=s.updated_at,
+            gross_payment=s.gross_payment
         ))
 
     if archived_salaries:
@@ -302,42 +303,63 @@ def update_lookup(request, model_name, pk):
 def bulk_set_gross_salaries(request):
     if request.method == "POST":
         form = GrossSalaryBulkForm(request.POST)
-        # refresh=1 ise sadece formu yeniden göster (auto-prefill yapıldı)
+
+        # refresh=1 sadece formu yeniden göstermek için
         if request.POST.get('refresh') == '1':
             return render(request, "bulk_gross_salaries.html", {"form": form})
 
         if form.is_valid():
             worker = form.cleaned_data['worker']
             year = form.cleaned_data['year']
-            months = form.cleaned_data['months']
+
+            #  str to list of int
+            months = [int(m) for m in form.cleaned_data['months']]
+
             gross_salary_hourly = form.cleaned_data['gross_salary_hourly']
             overwrite = form.cleaned_data['overwrite_existing']
 
             for m in months:
+
                 if overwrite:
-                    WorkerGrossMonthly.objects.update_or_create(
-                        worker=worker, year=year, month=m,
-                        defaults={'gross_salary_hourly': gross_salary_hourly, 'currency': worker.currency},
+                    # UPDATE ya da CREATE
+                    result = WorkerGrossMonthly.objects.update_or_create(
+                        worker=worker,
+                        year=year,
+                        month=m,
+                        defaults={
+                            'gross_salary_hourly': gross_salary_hourly,
+                            'currency': worker.currency
+                        },
                     )
+                    result[0].save()   # gross_payment calcuation için 
+
                 else:
-                    WorkerGrossMonthly.objects.get_or_create(
-                        worker=worker, year=year, month=m,
-                        defaults={'gross_salary_hourly': gross_salary_hourly, 'currency': worker.currency},
+                    # just create if not exists
+                    result = WorkerGrossMonthly.objects.get_or_create(
+                        worker=worker,
+                        year=year,
+                        month=m,
+                        defaults={
+                            'gross_salary_hourly': gross_salary_hourly,
+                            'currency': worker.currency
+                        },
                     )
+                    # yeni oluşturulan instance yine hesaplanmalı
+                    result[0].save()
 
             messages.success(request, f"{worker.sicil_no} ({worker.name_surname}) için kayıtlar güncellendi.")
             return redirect("workers:list_worker_salaries", worker_id=worker.id)
+
     else:
         form = GrossSalaryBulkForm()
 
     return render(request, "bulk_gross_salaries.html", {"form": form})
 
 
-
 @login_required
 def update_salary_record(request, salary_id):
 
-    # Yeni kayıt mı kontrolü
+    # Yeni kayıt kontrolü
     is_new_record = (salary_id == 0)
 
     # -----------------------------
