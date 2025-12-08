@@ -239,7 +239,7 @@ class BaseWorker(models.Model):
     s_no = models.ForeignKey(CostCenter, on_delete=models.SET_NULL, null=True, verbose_name="CostCenter")
     name_surname = models.CharField(max_length=100)
     date_of_recruitment = models.DateTimeField()
-    gross_payment = models.DecimalField(max_digits=15, decimal_places=2)
+    gross_payment_hourly = models.DecimalField(max_digits=15, decimal_places=2)
     total_work_hours = models.DecimalField(max_digits=10, decimal_places=1, null=True, blank=True, verbose_name="Total Work Hours")
     update_date_user = models.DateField(null=True, blank=True)
 
@@ -289,10 +289,10 @@ class WorkerGrossMonthly(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(12)]
     )
 
-    gross_salary = models.DecimalField(max_digits=15, decimal_places=2)
+    gross_salary_hourly = models.DecimalField(max_digits=15, decimal_places=2)
     currency = models.ForeignKey("Currency", null=True, blank=True, on_delete=models.SET_NULL)  # 🔑 burası eklendi
     sicil_no = models.CharField(max_length=50, null=True, blank=True)
-
+    gross_payment = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -302,7 +302,7 @@ class WorkerGrossMonthly(models.Model):
         unique_together = ("worker", "year", "month")
 
     def __str__(self):
-        return f"{self.worker.name_surname} ({self.worker.sicil_no}) - {self.month}/{self.year}: {self.gross_salary}"
+        return f"{self.worker.name_surname} ({self.worker.sicil_no}) - {self.month}/{self.year}: {self.gross_salary_hourly}"
 
     @property
     def worker_sicil_no(self):
@@ -317,9 +317,20 @@ class WorkerGrossMonthly(models.Model):
         return calendar.month_name[self.month]
     
     def save(self, *args, **kwargs):
-        # Yeni kayıt veya sicil_no henüz yazılmamışsa
+        # Sicil numarasını otomatik yaz
         if self.worker and not self.sicil_no:
             self.sicil_no = self.worker.sicil_no
+
+        days_in_month = calendar.monthrange(self.year, self.month)[1]
+        work_hours = self.worker.total_work_hours or 0
+
+        if self.gross_salary_hourly and work_hours:
+            self.gross_payment = (
+                self.gross_salary_hourly * work_hours * days_in_month
+            )
+        else:
+            self.gross_payment = None
+
         super().save(*args, **kwargs)
 
 
@@ -332,9 +343,10 @@ class ArchivedWorkerGrossMonthly(models.Model):
 
     year = models.PositiveIntegerField()
     month = models.PositiveIntegerField()
-    gross_salary = models.DecimalField(max_digits=15, decimal_places=2)
+    gross_salary_hourly = models.DecimalField(max_digits=15, decimal_places=2)
     currency = models.ForeignKey("Currency", null=True, blank=True, on_delete=models.SET_NULL)
     sicil_no = models.CharField(max_length=50, null=True, blank=True)
+    gross_payment = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
 
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()

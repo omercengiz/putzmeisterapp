@@ -5,52 +5,48 @@
 <div class="row">
     <div class="col-md-10 offset-md-1"> 
 
-        <h3>Benefit</h3>
+        <h3>{{ title }}</h3>
         <hr>
 
         <form method="post" novalidate>
             {% csrf_token %}
+
             <div class="row">
+                <!-- Worker -->
                 <div class="col-md-6 mb-3">
                     {{ form.worker|as_crispy_field }}
                 </div>
 
-                <div class="col-md-6 mb-3">
-                    {{ form.period|as_crispy_field }}  
+                <!-- Year -->
+                <div class="col-md-3 mb-3">
+                    {{ form.year|as_crispy_field }}
                 </div>
 
-                <div class="col-md-6 mb-3">
-                {{ form.aile_yakacak|as_crispy_field }}
+                <!-- Month -->
+                <div class="col-md-3 mb-3">
+                    {{ form.month|as_crispy_field }}
                 </div>
-                <div class="col-md-6 mb-3">
-                {{ form.erzak|as_crispy_field }}
-                </div>
-                <div class="col-md-6 mb-3">
-                {{ form.altin|as_crispy_field }}
-                </div>
-                <div class="col-md-6 mb-3">
-                {{ form.bayram|as_crispy_field }}
-                </div>
-                <div class="col-md-6 mb-3">
-                {{ form.dogum_evlenme|as_crispy_field }}
-                </div>
-                <div class="col-md-6 mb-3">
-                {{ form.fon|as_crispy_field }}
-                </div>
-                <div class="col-md-6 mb-3">
-                {{ form.harcirah|as_crispy_field }}
-                </div>
-                <div class="col-md-6 mb-3">
-                {{ form.yol_parasi|as_crispy_field }}
-                </div>
-                <div class="col-md-6 mb-3">
-                {{ form.prim|as_crispy_field }}
-                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">{{ form.aile_yakacak|as_crispy_field }}</div>
+                <div class="col-md-6 mb-3">{{ form.erzak|as_crispy_field }}</div>
+
+                <div class="col-md-6 mb-3">{{ form.altin|as_crispy_field }}</div>
+                <div class="col-md-6 mb-3">{{ form.bayram|as_crispy_field }}</div>
+
+                <div class="col-md-6 mb-3">{{ form.dogum_evlenme|as_crispy_field }}</div>
+                <div class="col-md-6 mb-3">{{ form.fon|as_crispy_field }}</div>
+
+                <div class="col-md-6 mb-3">{{ form.harcirah|as_crispy_field }}</div>
+                <div class="col-md-6 mb-3">{{ form.yol_parasi|as_crispy_field }}</div>
+
+                <div class="col-md-6 mb-3">{{ form.prim|as_crispy_field }}</div>
             </div>
 
             <div class="d-flex justify-content-end mt-3">
                 <a href="{% url 'benefits:list' %}" class="btn btn-secondary me-2">Cancel</a>
-                <button type="submit" class="btn btn-success">Save</button>
+                <button type="submit" class="btn btn-success">{{ title }}</button>
             </div>
         </form>
 

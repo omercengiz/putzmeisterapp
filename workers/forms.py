@@ -19,7 +19,7 @@ class WorkersForm(forms.ModelForm):
             "date_of_recruitment",
             "work_class", 
             "class_name",
-            "gross_payment",
+            "gross_payment_hourly",
             "currency",
             "bonus",
             "total_work_hours",
@@ -68,8 +68,8 @@ class GrossSalaryBulkForm(forms.Form):
     )
 
     # Burada initial vermiyoruz ki "0" değerinden dolayı override engellenmesin
-    gross_salary = forms.DecimalField(
-        label="Gross Salary", max_digits=15, decimal_places=2, min_value=Decimal('0')
+    gross_salary_hourly = forms.DecimalField(
+        label="Gross Salary Hourly", max_digits=15, decimal_places=2, min_value=Decimal('0')
     )
 
     # Currency FK dropdown
@@ -82,9 +82,9 @@ class GrossSalaryBulkForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         """
-        - refresh=1 (worker değişti) geldiğinde currency ve gross_salary'ı
+        - refresh=1 (worker değişti) geldiğinde currency ve gross_salary_hourly'ı
           Workers tablosundan ZORLA doldur.
-        - refresh yoksa ve gross_salary boş ise yine Workers'tan doldur.
+        - refresh yoksa ve gross_salary_hourly boş ise yine Workers'tan doldur.
         """
         super().__init__(*args, **kwargs)
         self.fields['worker'].label_from_instance = lambda obj: (obj.sicil_no or "").strip()
@@ -99,29 +99,30 @@ class GrossSalaryBulkForm(forms.Form):
                 if w:
                     # currency'i her durumda otomatik set et (FK id)
                     data['currency'] = w.currency_id or ''
-                    # gross_salary kuralı:
-                    #  - refresh=1 ise ZORLA worker.gross_payment ile doldur
-                    #  - değilse ve kullanıcı alanı boş bıraktıysa yine doldur
-                    if refresh == '1' or not data.get('gross_salary'):
-                        data['gross_salary'] = (w.gross_payment or '')
+                    # gross_salary_hourly kuralı:
+                    #  - refresh=1 ise hard update/insert yap worker.gross_payment_hourly ile doldur
+                    #  - değilse ve alanı boş bıraktıysa yine doldur
+                    if refresh == '1' or not data.get('gross_salary_hourly'):
+                        data['gross_salary_hourly'] = (w.gross_payment_hourly or '')
                     self.data = data
         else:
             # GET/initial senaryosu (opsiyonel)
             w = self.initial.get('worker') if isinstance(self.initial, dict) else None
             if isinstance(w, Workers):
                 self.fields['currency'].initial = w.currency_id or None
-                if w.gross_payment is not None:
-                    self.fields['gross_salary'].initial = w.gross_payment
+                if w.gross_payment_hourly is not None:
+                    self.fields['gross_salary_hourly'].initial = w.gross_payment_hourly
 
 
 class WorkerGrossMonthlyForm(forms.ModelForm):
     class Meta:
         model = WorkerGrossMonthly
-        fields = ["year", "month", "gross_salary", "currency"]
+        fields = ["year", "month", "gross_salary_hourly", "currency"]
         widgets = {
             "year": forms.NumberInput(attrs={"min": 2000, "max": 2100}),
             "month": forms.NumberInput(attrs={"min": 1, "max": 12}),
-            "gross_salary": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
+            "gross_salary_hourly": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
+            "gross_payment": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
         }
 
 class WorkerImportForm(forms.Form):

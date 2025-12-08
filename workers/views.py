@@ -160,7 +160,7 @@ def deleteWorkers(request, id):
             date_of_recruitment=worker.date_of_recruitment,
             work_class=worker.work_class,
             class_name=worker.class_name,
-            gross_payment=worker.gross_payment,
+            gross_payment_hourly=worker.gross_payment_hourly,
             currency=worker.currency,
             bonus=worker.bonus,
             exit_date=exit_date,
@@ -177,7 +177,7 @@ def deleteWorkers(request, id):
         archived_worker.date_of_recruitment = worker.date_of_recruitment
         archived_worker.work_class = worker.work_class
         archived_worker.class_name = worker.class_name
-        archived_worker.gross_payment = worker.gross_payment
+        archived_worker.gross_payment_hourly = worker.gross_payment_hourly
         archived_worker.currency = worker.currency
         archived_worker.bonus = worker.bonus
         archived_worker.exit_date = exit_date
@@ -219,11 +219,12 @@ def deleteWorkers(request, id):
             archived_worker=archived_worker,
             year=s.year,
             month=s.month,
-            gross_salary=s.gross_salary,
+            gross_salary_hourly=s.gross_salary_hourly,
             currency=s.currency,
             sicil_no=s.sicil_no,
             created_at=s.created_at,
             updated_at=s.updated_at,
+            gross_payment=s.gross_payment
         ))
 
     if archived_salaries:
@@ -302,42 +303,63 @@ def update_lookup(request, model_name, pk):
 def bulk_set_gross_salaries(request):
     if request.method == "POST":
         form = GrossSalaryBulkForm(request.POST)
-        # refresh=1 ise sadece formu yeniden göster (auto-prefill yapıldı)
+
+        # refresh=1 sadece formu yeniden göstermek için
         if request.POST.get('refresh') == '1':
             return render(request, "bulk_gross_salaries.html", {"form": form})
 
         if form.is_valid():
             worker = form.cleaned_data['worker']
             year = form.cleaned_data['year']
-            months = form.cleaned_data['months']
-            gross_salary = form.cleaned_data['gross_salary']
+
+            #  str to list of int
+            months = [int(m) for m in form.cleaned_data['months']]
+
+            gross_salary_hourly = form.cleaned_data['gross_salary_hourly']
             overwrite = form.cleaned_data['overwrite_existing']
 
             for m in months:
+
                 if overwrite:
-                    WorkerGrossMonthly.objects.update_or_create(
-                        worker=worker, year=year, month=m,
-                        defaults={'gross_salary': gross_salary, 'currency': worker.currency},
+                    # UPDATE ya da CREATE
+                    result = WorkerGrossMonthly.objects.update_or_create(
+                        worker=worker,
+                        year=year,
+                        month=m,
+                        defaults={
+                            'gross_salary_hourly': gross_salary_hourly,
+                            'currency': worker.currency
+                        },
                     )
+                    result[0].save()   # gross_payment calcuation için 
+
                 else:
-                    WorkerGrossMonthly.objects.get_or_create(
-                        worker=worker, year=year, month=m,
-                        defaults={'gross_salary': gross_salary, 'currency': worker.currency},
+                    # just create if not exists
+                    result = WorkerGrossMonthly.objects.get_or_create(
+                        worker=worker,
+                        year=year,
+                        month=m,
+                        defaults={
+                            'gross_salary_hourly': gross_salary_hourly,
+                            'currency': worker.currency
+                        },
                     )
+                    # yeni oluşturulan instance yine hesaplanmalı
+                    result[0].save()
 
             messages.success(request, f"{worker.sicil_no} ({worker.name_surname}) için kayıtlar güncellendi.")
             return redirect("workers:list_worker_salaries", worker_id=worker.id)
+
     else:
         form = GrossSalaryBulkForm()
 
     return render(request, "bulk_gross_salaries.html", {"form": form})
 
 
-
 @login_required
 def update_salary_record(request, salary_id):
 
-    # Yeni kayıt mı kontrolü
+    # Yeni kayıt kontrolü
     is_new_record = (salary_id == 0)
 
     # -----------------------------
@@ -363,7 +385,7 @@ def update_salary_record(request, salary_id):
                 worker=worker,
                 year=year,
                 month=month,
-                gross_salary=worker.gross_payment or 0,
+                gross_salary_hourly=worker.gross_payment_hourly or 0,
                 currency=worker.currency,
             )
         else:
@@ -404,7 +426,7 @@ def update_salary_record(request, salary_id):
                 year=year,
                 month=month,
                 defaults={
-                    "gross_salary": worker.gross_payment or 0,
+                    "gross_salary_hourly": worker.gross_payment_hourly or 0,
                     "currency": worker.currency,
                     "sicil_no": worker.sicil_no
                 }
@@ -432,40 +454,54 @@ def update_salary_record(request, salary_id):
             "worker": worker,
         })
 
-
 def list_worker_salaries(request, worker_id):
-    worker = get_object_or_404(Workers, id=worker_id)
+    worker_search = request.GET.get("worker_search", "").strip()
 
-    # YIL FİLTRESİ
-    selected_year = request.GET.get("year")
-    current_year = datetime.date.today().year
+    # --- Worker Search WITHOUT redirect ---
+    if worker_search:
+        workers = (
+            Workers.objects.filter(name_surname__icontains=worker_search)
+            | Workers.objects.filter(sicil_no__icontains=worker_search)
+        )
 
-    try:
-        selected_year = int(selected_year) if selected_year else current_year
-    except:
-        selected_year = current_year
+        # Eğer arama sonucu bulunursa gösterilecek worker'ı değiştir
+        found_worker = workers.first()
+        if found_worker:
+            worker = found_worker
+        else:
+            messages.warning(request, "No matching worker found.")
+            worker = get_object_or_404(Workers, id=worker_id)
+    else:
+        worker = get_object_or_404(Workers, id=worker_id)
 
-    # Dropdownda göstermek için
-    year_list = list(range(2015, current_year + 1))
+    # --- Year Filter ---
+    raw_year = request.GET.get("year", datetime.date.today().year)
+    selected_year = int("".join(filter(str.isdigit, str(raw_year)))) or datetime.date.today().year
+
+    year_list = list(range(2020, datetime.date.today().year + 1))
 
     salaries = WorkerGrossMonthly.objects.filter(worker=worker, year=selected_year)
     salaries_dict = {s.month: s for s in salaries}
 
+    # --- months_data (month_num EKLENDİ) ---
     months_data = []
     for m in range(1, 13):
         months_data.append({
             "month": calendar.month_name[m],
             "month_num": m,
             "year": selected_year,
-            "salary": salaries_dict.get(m),
+            "salary": salaries_dict.get(m)
         })
 
     return render(request, "worker_salary_list.html", {
         "worker": worker,
         "months_data": months_data,
-        "year_list": year_list,
         "selected_year": selected_year,
+        "year_list": year_list,
+        "worker_search": worker_search,
     })
+
+
 
 def delete_salary_record(request, salary_id):
     salary = get_object_or_404(WorkerGrossMonthly, pk=salary_id)
@@ -497,7 +533,7 @@ def import_workers(request):
                     "Work class": "work_class",
                     "Class name": "class_name",
                     "Department": "department",
-                    "Gross payment": "gross_payment",
+                    "Gross payment hourly": "gross_payment_hourly",
                     "Currency": "currency",
                     "Bonus": "bonus",
                 }
@@ -583,7 +619,7 @@ def import_workers(request):
                         defaults={
                             "name_surname": row.get("name_surname"),
                             "date_of_recruitment": date_val,
-                            "gross_payment": row.get("gross_payment", 0),
+                            "gross_payment_hourly": row.get("gross_payment_hourly", 0),
                             "bonus": row.get("bonus", 0),
                             "author_id": request.user.id,
                             **lookup_ids
