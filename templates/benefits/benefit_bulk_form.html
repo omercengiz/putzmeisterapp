@@ -52,6 +52,32 @@
               {{ form.overwrite_existing.label }}
             </label>
           </div>
+              
+          <div class="mt-3">
+              <label class="form-label fw-semibold">Apply to Short Class Groups</label>
+
+              <div class="d-flex flex-wrap gap-2">
+                  <button type="submit" name="short_class_action" value="W"
+                      class="btn btn-outline-primary btn-sm">
+                      White
+                  </button>
+
+                  <button type="submit" name="short_class_action" value="B"
+                      class="btn btn-outline-info btn-sm">
+                      Blue
+                  </button>
+
+                  <button type="submit" name="short_class_action" value="I"
+                      class="btn btn-outline-success btn-sm">
+                      Intern
+                  </button>
+              </div>
+
+              <small class="text-muted d-block mt-1">
+                  If you click one of these buttons, the selected months & values will apply to all workers with the selected short class.
+              </small>
+          </div>
+
         </div>
       </div>
 
