@@ -192,7 +192,8 @@ def deleteWorkers(request, id):
         archived_benefits.append(ArchivedBenefit(
             archived_worker=archived_worker,
             sicil_no=worker.sicil_no,
-            period=b.period,
+            year=b.year,
+            month=b.month,
             aile_yakacak=b.aile_yakacak,
             erzak=b.erzak,
             altin=b.altin,

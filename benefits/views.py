@@ -157,7 +157,7 @@ def import_benefits(request):
             try:
                 df = pd.read_excel(excel_file)
 
-                # ARTIK period YOK → year + month bekliyoruz
+                
                 required_columns = [
                     "sicil_no", "year", "month",
                     "aile_yakacak", "erzak", "altin",
