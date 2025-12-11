@@ -262,6 +262,35 @@ class Workers(BaseWorker):
     def __str__(self):
         return self.name_surname
 
+    def save(self, *args, **kwargs):
+        is_update = self.pk is not None
+
+        old_hourly = None
+        old_currency = None
+
+        if is_update:
+            try:
+                old = Workers.objects.get(pk=self.pk)
+                old_hourly = old.gross_payment_hourly
+                old_currency = old.currency
+            except Workers.DoesNotExist:
+                pass
+
+        super().save(*args, **kwargs)
+
+        if not is_update:
+            return
+        
+        if old_hourly == self.gross_payment_hourly and old_currency == self.currency:
+            return
+        
+        monthly_records = self.monthly_gross_salaries.all()
+
+        for salary in monthly_records:
+            salary.gross_salary_hourly = self.gross_payment_hourly
+            salary.currency = self.currency
+            salary.save()  # salary.save() içindeki gross_payment yeniden hesaplanacak
+
 
 class ArchivedWorker(BaseWorker):
     original_id = models.IntegerField()
