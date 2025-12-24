@@ -70,9 +70,9 @@
           </p>
 
           <p class="mb-1">
-            <strong>Total Hours:</strong>
-            {% if worker.total_work_hours %}
-              {{ worker.total_work_hours }}
+            <strong>Cost Center:</strong>
+            {% if worker.s_no %}
+              {{ worker.s_no }}
             {% else %}
               <span class="text-muted">Not entered</span>
             {% endif %}
