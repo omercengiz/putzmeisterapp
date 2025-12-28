@@ -38,7 +38,7 @@ def benefit_list(request):
     paginator = Paginator(qs, 12)
     page_obj = paginator.get_page(request.GET.get('page'))
 
-    year_list = list(range(2020, datetime.date.today().year + 1))
+    year_list = list(range(2020, datetime.date.today().year + 3))
     month_list = [
         (1, "January"), (2, "February"), (3, "March"),
         (4, "April"), (5, "May"), (6, "June"),
@@ -101,6 +101,100 @@ def benefit_delete(request, pk):
 @login_required
 def benefit_bulk(request):
     form = BenefitBulkForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        short_class_action = request.POST.get("short_class_action")   # W / B / I veya None
+        year   = form.cleaned_data["year"]
+        months = form.cleaned_data["months"]
+        overwrite = form.cleaned_data["overwrite_existing"]
+
+        defaults_common = {
+            "aile_yakacak": form.cleaned_data["aile_yakacak"],
+            "erzak":         form.cleaned_data["erzak"],
+            "altin":         form.cleaned_data["altin"],
+            "bayram":        form.cleaned_data["bayram"],
+            "dogum_evlenme": form.cleaned_data["dogum_evlenme"],
+            "fon":           form.cleaned_data["fon"],
+            "harcirah":      form.cleaned_data["harcirah"],
+            "yol_parasi":    form.cleaned_data["yol_parasi"],
+            "prim":          form.cleaned_data["prim"],
+        }
+
+        if short_class_action in ["W", "B", "I"]:
+            workers = Workers.objects.filter(short_class__name=short_class_action)
+
+            created_count = 0
+            updated_count = 0
+
+            with transaction.atomic():
+                for w in workers:
+                    for m in months:
+                        if overwrite:
+                            obj, created = Benefit.objects.update_or_create(
+                                worker=w,
+                                year=year,
+                                month=m,
+                                defaults=defaults_common
+                            )
+                            if created:
+                                created_count += 1
+                            else:
+                                updated_count += 1
+
+                        else:
+                            if not Benefit.objects.filter(worker=w, year=year, month=m).exists():
+                                Benefit.objects.create(
+                                    worker=w,
+                                    year=year,
+                                    month=m,
+                                    **defaults_common
+                                )
+                                created_count += 1
+
+            messages.success(
+                request,
+                f"{short_class_action} grubundaki çalışanlar için işlem tamamlandı → "
+                f"{created_count} yeni kayıt, {updated_count} güncelleme."
+            )
+            return redirect("benefits:list")
+
+        worker = form.cleaned_data["worker"]
+
+        created_count = 0
+        updated_count = 0
+
+        with transaction.atomic():
+            for m in months:
+                if overwrite:
+                    obj, created = Benefit.objects.update_or_create(
+                        worker=worker,
+                        year=year,
+                        month=m,
+                        defaults=defaults_common
+                    )
+                    if created:
+                        created_count += 1
+                    else:
+                        updated_count += 1
+                else:
+                    if not Benefit.objects.filter(worker=worker, year=year, month=m).exists():
+                        Benefit.objects.create(
+                            worker=worker,
+                            year=year,
+                            month=m,
+                            **defaults_common
+                        )
+                        created_count += 1
+
+        messages.success(
+            request,
+            f"İşlem tamamlandı: {created_count} yeni kayıt, {updated_count} güncelleme."
+        )
+        return redirect("benefits:list")
+
+    return render(request, "benefits/benefit_bulk_form.html", {"form": form, "title": "Bulk Add/Update Benefits"})
+
+    form = BenefitBulkForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         worker = form.cleaned_data["worker"]
         year   = form.cleaned_data["year"]
@@ -157,7 +251,7 @@ def import_benefits(request):
             try:
                 df = pd.read_excel(excel_file)
 
-                # ARTIK period YOK → year + month bekliyoruz
+                
                 required_columns = [
                     "sicil_no", "year", "month",
                     "aile_yakacak", "erzak", "altin",

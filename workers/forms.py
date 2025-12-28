@@ -19,7 +19,7 @@ class WorkersForm(forms.ModelForm):
             "date_of_recruitment",
             "work_class", 
             "class_name",
-            "gross_payment_hourly",
+            "gross_payment",
             "currency",
             "bonus",
             "total_work_hours",
