@@ -2,6 +2,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
+from decimal import Decimal
+import datetime
 import calendar
 from .lookups import (
     Group, ShortClass, DirectorName, Currency,
@@ -240,8 +242,9 @@ class BaseWorker(models.Model):
     name_surname = models.CharField(max_length=100)
     date_of_recruitment = models.DateTimeField()
     gross_payment_hourly = models.DecimalField(max_digits=15, decimal_places=2)
-    total_work_hours = models.DecimalField(max_digits=10, decimal_places=1, null=True, blank=True, verbose_name="Total Work Hours")
+    total_work_hours = models.DecimalField(max_digits=10, decimal_places=1, null=True, blank=True, default=225, verbose_name="Total Work Hours")
     update_date_user = models.DateField(null=True, blank=True)
+    gross_payment = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
 
     
     bonus = models.IntegerField(validators=[
@@ -263,33 +266,53 @@ class Workers(BaseWorker):
         return self.name_surname
 
     def save(self, *args, **kwargs):
+        from decimal import Decimal
+
         is_update = self.pk is not None
 
-        old_hourly = None
-        old_currency = None
+        # total_work_hours boşsa default 225
+        if not self.total_work_hours:
+            self.total_work_hours = Decimal("225")
 
-        if is_update:
-            try:
-                old = Workers.objects.get(pk=self.pk)
-                old_hourly = old.gross_payment_hourly
-                old_currency = old.currency
-            except Workers.DoesNotExist:
-                pass
+        # 🟢 Maaşı total_work_hours'a böl → saatlik maaş
+        if self.gross_payment and self.total_work_hours:
+            total_hours = (
+                self.total_work_hours
+                if isinstance(self.total_work_hours, Decimal)
+                else Decimal(str(self.total_work_hours))
+            )
+
+            self.gross_payment_hourly = (
+                Decimal(str(self.gross_payment)) / total_hours
+            ).quantize(Decimal("0.01"))
 
         super().save(*args, **kwargs)
 
-        if not is_update:
+        # update_date_user yoksa veya yeni kayıtsa monthly oluşturma
+        if not is_update or not self.update_date_user:
             return
-        
-        if old_hourly == self.gross_payment_hourly and old_currency == self.currency:
-            return
-        
-        monthly_records = self.monthly_gross_salaries.all()
 
-        for salary in monthly_records:
-            salary.gross_salary_hourly = self.gross_payment_hourly
-            salary.currency = self.currency
-            salary.save()  # salary.save() içindeki gross_payment yeniden hesaplanacak
+        update_year = self.update_date_user.year
+        start_month = self.update_date_user.month
+
+        # 🟢 Seçilen aydan yıl sonuna kadar WorkerGrossMonthly senkronu
+        for month in range(start_month, 13):
+            salary_obj, created = WorkerGrossMonthly.objects.get_or_create(
+                worker=self,
+                year=update_year,
+                month=month,
+                defaults={
+                    "gross_salary_hourly": self.gross_payment_hourly,
+                    "currency": self.currency,
+                    "sicil_no": self.sicil_no,
+                }
+            )
+
+            salary_obj.gross_salary_hourly = self.gross_payment_hourly
+            salary_obj.currency = self.currency
+            salary_obj.sicil_no = self.sicil_no
+            salary_obj.save()  # burada 7,5 × gün sayısı ile gross_payment hesaplanıyor
+
 
 
 class ArchivedWorker(BaseWorker):
@@ -326,6 +349,9 @@ class WorkerGrossMonthly(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Varsayılan günlük çalışma saati 7.5 bunu bütçe işleri için kullanıyoruz.
+    DAILY_WORK_HOURS = Decimal("7.5") 
+
     class Meta:
         db_table = "worker_gross_monthly"
         unique_together = ("worker", "year", "month")
@@ -346,21 +372,19 @@ class WorkerGrossMonthly(models.Model):
         return calendar.month_name[self.month]
     
     def save(self, *args, **kwargs):
-        # Sicil numarasını otomatik yaz
         if self.worker and not self.sicil_no:
             self.sicil_no = self.worker.sicil_no
 
-        days_in_month = calendar.monthrange(self.year, self.month)[1]
-        work_hours = self.worker.total_work_hours or 0
+        days = calendar.monthrange(self.year, self.month)[1]
 
-        if self.gross_salary_hourly and work_hours:
+        # Saatlik ücret → günlük 7.5 saat * gün sayısı
+        if self.gross_salary_hourly:
             self.gross_payment = (
-                self.gross_salary_hourly * work_hours * days_in_month
-            )
-        else:
-            self.gross_payment = None
+                Decimal(str(self.gross_salary_hourly)) * Decimal("7.5") * days
+            ).quantize(Decimal("0.01"))
 
         super().save(*args, **kwargs)
+
 
 
 class ArchivedWorkerGrossMonthly(models.Model):

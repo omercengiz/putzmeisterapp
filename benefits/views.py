@@ -38,7 +38,7 @@ def benefit_list(request):
     paginator = Paginator(qs, 12)
     page_obj = paginator.get_page(request.GET.get('page'))
 
-    year_list = list(range(2020, datetime.date.today().year + 1))
+    year_list = list(range(2020, datetime.date.today().year + 3))
     month_list = [
         (1, "January"), (2, "February"), (3, "March"),
         (4, "April"), (5, "May"), (6, "June"),

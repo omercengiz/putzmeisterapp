@@ -50,6 +50,7 @@
         <th>Work Class</th>
         <th>Short Class</th>
         <th>Class Name</th>
+        <th>Gross Payment</th>
         <th>Gross Payment Hourly</th>
         <th>Bonus</th>
         <th>Actions</th>
@@ -69,6 +70,7 @@
             <td>{{ worker.work_class }}</td>
             <td>{{ worker.short_class }}</td>
             <td>{{ worker.class_name }}</td>
+            <td>{{ worker.gross_payment|floatformat:2|localize }}</td>
             <td>{{ worker.gross_payment_hourly|floatformat:2|localize }}</td>
             <td>{{ worker.bonus }}</td>
             <td>
