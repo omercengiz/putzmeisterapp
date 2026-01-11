@@ -42,6 +42,12 @@ class Department(models.Model):
     def __str__(self):
         return self.name
 
+class LocationName(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
 class CostCenter(models.Model):
     code = models.CharField(max_length=10, unique=True)
     name = models.CharField(max_length=255)

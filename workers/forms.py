@@ -18,6 +18,7 @@ class WorkersForm(forms.ModelForm):
             "name_surname", 
             "date_of_recruitment",
             "work_class", 
+            "location_name",
             "class_name",
             "gross_payment",
             "currency",

@@ -7,7 +7,7 @@ import datetime
 import calendar
 from .lookups import (
     Group, ShortClass, DirectorName, Currency,
-    WorkClass, ClassName, Department, CostCenter, ExitReason
+    WorkClass, ClassName, Department, CostCenter, ExitReason, LocationName
 )
 
 
@@ -234,6 +234,7 @@ class BaseWorker(models.Model):
     sicil_no = models.CharField(max_length=50, verbose_name="Sicil No", unique=True)
     short_class = models.ForeignKey(ShortClass, on_delete=models.SET_NULL, null=True, verbose_name="Status")
     department_short_name = models.ForeignKey(DirectorName, on_delete=models.SET_NULL, null=True, verbose_name="Directorships")
+    location_name = models.ForeignKey(LocationName, on_delete=models.SET_NULL, null=True, verbose_name="Location")
     currency = models.ForeignKey(Currency, on_delete=models.SET_NULL, null=True)
     work_class = models.ForeignKey(WorkClass, on_delete=models.SET_NULL, null=True)
     class_name = models.ForeignKey(ClassName, on_delete=models.SET_NULL, null=True)
@@ -266,8 +267,6 @@ class Workers(BaseWorker):
         return self.name_surname
 
     def save(self, *args, **kwargs):
-        from decimal import Decimal
-
         is_update = self.pk is not None
 
         # total_work_hours boşsa default 225

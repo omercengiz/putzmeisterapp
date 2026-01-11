@@ -5,7 +5,7 @@ from django.contrib import messages
 from .models import Workers, ArchivedWorker, WorkerGrossMonthly, ArchivedWorkerGrossMonthly
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
-from .lookups import Group, ShortClass, DirectorName, Currency, WorkClass, ClassName, Department, CostCenter, ExitReason
+from .lookups import Group, ShortClass, DirectorName, Currency, WorkClass, ClassName, Department, CostCenter, ExitReason, LocationName
 from django.forms import modelform_factory
 from django.views.decorators.http import require_POST
 from django.apps import apps
@@ -27,6 +27,7 @@ lookup_models = {
     "ClassName": ClassName,
     "Department": Department,
     "CostCenter": CostCenter,
+    "LocationName": LocationName,
     "ExitReason": ExitReason,
 }
 
@@ -539,6 +540,7 @@ def import_workers(request):
                     "Department": "department",
                     "Currency": "currency",
                     "Bonus": "bonus",
+                    "Location": "location_name",
                     "Gross payment": "gross_payment",           
                     "Update Date": "update_date_user",             
                 }
@@ -548,7 +550,7 @@ def import_workers(request):
 
                 required = ["group","s_no","short_class","department_short_name",
                             "name_surname","date_of_recruitment","work_class",
-                            "class_name","department","currency","sicil_no"]
+                            "class_name","department","currency","sicil_no","location_name"]
 
                 missing = [c for c in required if c not in df.columns]
                 if missing:
@@ -564,6 +566,7 @@ def import_workers(request):
                     "work_class": (WorkClass, "name"),
                     "class_name": (ClassName, "name"),
                     "department": (Department, "name"),
+                    "location_name": (LocationName, "name"),
                 }
 
                 for index, row in df.iterrows():
@@ -603,6 +606,7 @@ def import_workers(request):
                             "gross_payment_hourly": gross_hourly,
                             "update_date_user": update_date_user,
                             "bonus": row.get("bonus", 0),
+                            "location_name": lookup_ids.get("location_name_id"),
                             "author_id": request.user.id,
                             **lookup_ids
                         }
