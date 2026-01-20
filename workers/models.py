@@ -340,6 +340,13 @@ class WorkerGrossMonthly(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(12)]
     )
 
+    group = models.ForeignKey(Group, on_delete=models.SET_NULL, null=True)
+    short_class = models.ForeignKey(ShortClass, on_delete=models.SET_NULL, null=True)
+    class_name = models.ForeignKey(ClassName, on_delete=models.SET_NULL, null=True)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
+    work_class = models.ForeignKey(WorkClass, on_delete=models.SET_NULL, null=True)
+    location_name = models.ForeignKey(LocationName, on_delete=models.SET_NULL, null=True)   
+
     gross_salary_hourly = models.DecimalField(max_digits=15, decimal_places=2)
     currency = models.ForeignKey("Currency", null=True, blank=True, on_delete=models.SET_NULL)  # 🔑 burası eklendi
     sicil_no = models.CharField(max_length=50, null=True, blank=True)

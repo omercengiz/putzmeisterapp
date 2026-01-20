@@ -333,7 +333,13 @@ def bulk_set_gross_salaries(request):
                         month=m,
                         defaults={
                             'gross_salary_hourly': gross_salary_hourly,
-                            'currency': worker.currency
+                            'currency': worker.currency,
+                            'group': worker.group,
+                            'short_class': worker.short_class,
+                            'class_name': worker.class_name,
+                            'department': worker.department,
+                            'work_class': worker.work_class,
+                            'location_name': worker.location_name
                         },
                     )
                     result[0].save()   # gross_payment calcuation için 
@@ -346,7 +352,13 @@ def bulk_set_gross_salaries(request):
                         month=m,
                         defaults={
                             'gross_salary_hourly': gross_salary_hourly,
-                            'currency': worker.currency
+                            'currency': worker.currency,
+                            'group': worker.group,
+                            'short_class': worker.short_class,
+                            'class_name': worker.class_name,
+                            'department': worker.department,
+                            'work_class': worker.work_class,
+                            'location_name': worker.location_name
                         },
                     )
                     # yeni oluşturulan instance yine hesaplanmalı
