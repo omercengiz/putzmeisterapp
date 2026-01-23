@@ -407,7 +407,10 @@ class WorkerGrossMonthly(models.Model):
             self.department_short_name = self.worker.department_short_name
             self.s_no = self.worker.s_no
             self.currency = self.worker.currency
-            self.bonus = self.worker.bonus
+            if self.month == 1:
+                self.bonus = self.worker.bonus
+            else:
+                self.bonus = 0
 
         days = calendar.monthrange(self.year, self.month)[1]
 

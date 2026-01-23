@@ -462,7 +462,11 @@ def update_salary_record(request, salary_id):
             updated.department = worker.department
             updated.work_class = worker.work_class
             updated.location_name = worker.location_name
-            updated.bonus = worker.bonus
+            if updated.month == 1:
+                updated.bonus = worker.bonus
+            else:
+                updated.bonus = 0
+
             updated.save()
 
             messages.success(request, "Salary record saved successfully.")
