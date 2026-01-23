@@ -5,19 +5,30 @@ from user.models import UserRole
 
 class CreateUserForm(forms.ModelForm):
     password = forms.CharField(
-        widget=forms.PasswordInput(attrs={'class': 'form-control'})
+        required=False,   # 👈 kritik
+        widget=forms.PasswordInput(
+            attrs={
+                'class': 'form-control'
+            }
+        )
     )
+
     role = forms.ChoiceField(
         choices=UserRole.ROLE_CHOICES,
-        widget=forms.Select(attrs={'class': 'form-select'})
+        widget=forms.Select(attrs={'class': 'form-select', 'required': True})
     )
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password']
+        fields = ['username', 'email']
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'username': forms.TextInput(attrs={'class': 'form-control', 'required': True}),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'required': True,
+                'pattern': r'.+@putzmeister\.com$',   # 👈 kritik
+                'title': 'Email must be a valid @putzmeister.com address'
+            }),
         }
 
 class LoginForm(forms.Form):

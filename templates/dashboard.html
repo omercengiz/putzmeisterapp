@@ -191,26 +191,51 @@
 document.addEventListener('DOMContentLoaded', function () {
   const formEl  = document.getElementById('deleteWorkerForm');
   const textEl  = document.getElementById('deleteWorkerText');
+
   const dateEl  = document.getElementById('exitDate');
   const dateWrapper = document.getElementById('quitDateWrapper');
+
+  const reasonEl = document.getElementById('exitReason');
+  const reasonWrapper = document.getElementById('exitReasonWrapper');
 
   document.querySelectorAll('.open-delete-modal').forEach(btn => {
     btn.addEventListener('click', function () {
       const workerId = this.dataset.workerId;
       const workerName = this.dataset.workerName || '';
-      const sicilNo = this.closest('tr').querySelector('td:first-child').textContent.trim();
+      const sicilNo = this.closest('tr')
+                          .querySelector('td:first-child')
+                          .textContent
+                          .trim();
 
       formEl.setAttribute('action', `/workers/delete/${workerId}`);
+
+      // reset
       dateEl.value = '';
+      reasonEl.value = '';
 
       if (sicilNo.startsWith('P')) {
-        textEl.textContent = `You are about to delete '${workerName}' (Sicil No: ${sicilNo}). This record will be deleted directly without asking for the quit date.`;
+        // 🔴 DIRECT DELETE
+        textEl.textContent =
+          `You are about to delete '${workerName}' (Sicil No: ${sicilNo}). 
+           This record will be deleted directly without exit information.`;
+
         dateWrapper.style.display = 'none';
+        reasonWrapper.style.display = 'none';
+
         dateEl.removeAttribute('required');
+        reasonEl.removeAttribute('required');
+
       } else {
-        textEl.textContent = `You are about to process the checkout for '${workerName}'. Please select the quit date.`;
+        // 🟢 ARCHIVE FLOW
+        textEl.textContent =
+          `You are about to process the checkout for '${workerName}'. 
+           Please select the quit date and reason.`;
+
         dateWrapper.style.display = 'block';
+        reasonWrapper.style.display = 'block';
+
         dateEl.setAttribute('required', 'required');
+        reasonEl.setAttribute('required', 'required');
       }
     });
   });

@@ -114,7 +114,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   const modalEl = document.getElementById('addUserModal');
-  const form = modalEl.querySelector('form');
   const modalTitle = document.getElementById('addUserModalLabel');
   const header = modalEl.querySelector('.modal-header');
 
@@ -125,39 +124,39 @@ document.addEventListener('DOMContentLoaded', function () {
   const selectRole    = document.getElementById('id_role');
   const passwordHelp  = document.getElementById('passwordHelp');
 
-  // Create (Add User) -> temiz modal
-  const openCreate = document.getElementById('openCreateModal');
-  openCreate.addEventListener('click', function () {
+  // CREATE MODE
+  document.getElementById('openCreateModal').addEventListener('click', function () {
     modalTitle.textContent = 'Create a new user';
     header.classList.remove('bg-primary');
     header.classList.add('bg-success');
 
     inputUserId.value = '';
-    if (inputUsername) inputUsername.value = '';
-    if (inputEmail)    inputEmail.value    = '';
-    if (inputPassword) inputPassword.value = '';
-    if (selectRole)    selectRole.value    = 'viewer';
-    if (passwordHelp)  passwordHelp.style.display = 'none';
+    inputUsername.value = '';
+    inputEmail.value = '';
+    inputPassword.value = '';
+    selectRole.value = 'viewer';
+
+    // 🔥 create → password ZORUNLU
+    inputPassword.setAttribute('required', 'required');
+    passwordHelp.style.display = 'none';
   });
 
-  // Update -> alanları doldur
+  // UPDATE MODE
   document.querySelectorAll('.open-update-modal').forEach(btn => {
     btn.addEventListener('click', function () {
       modalTitle.textContent = 'Update User';
       header.classList.remove('bg-success');
       header.classList.add('bg-primary');
 
-      const uid   = this.dataset.userId || '';
-      const uname = this.dataset.username || '';
-      const email = this.dataset.email || '';
-      const role  = this.dataset.role || 'viewer';
+      inputUserId.value = this.dataset.userId || '';
+      inputUsername.value = this.dataset.username || '';
+      inputEmail.value = this.dataset.email || '';
+      selectRole.value = this.dataset.role || 'viewer';
+      inputPassword.value = '';
 
-      inputUserId.value = uid;
-      if (inputUsername) inputUsername.value = uname;
-      if (inputEmail)    inputEmail.value    = email;
-      if (selectRole)    selectRole.value    = role;
-      if (inputPassword) inputPassword.value = ''; // güvenlik
-      if (passwordHelp)  passwordHelp.style.display = 'block';
+      // 🔥 update → password OPSİYONEL
+      inputPassword.removeAttribute('required');
+      passwordHelp.style.display = 'block';
     });
   });
 });

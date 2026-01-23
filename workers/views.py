@@ -224,6 +224,15 @@ def deleteWorkers(request, id):
             archived_worker=archived_worker,
             year=s.year,
             month=s.month,
+            group=s.group,
+            short_class=s.short_class,
+            class_name=s.class_name,
+            department=s.department,
+            work_class=s.work_class,
+            location_name=s.location_name,
+            department_short_name=s.department_short_name,
+            s_no=s.s_no,
+            bonus=s.bonus,
             gross_salary_hourly=s.gross_salary_hourly,
             currency=s.currency,
             sicil_no=s.sicil_no,
@@ -334,12 +343,6 @@ def bulk_set_gross_salaries(request):
                         defaults={
                             'gross_salary_hourly': gross_salary_hourly,
                             'currency': worker.currency,
-                            'group': worker.group,
-                            'short_class': worker.short_class,
-                            'class_name': worker.class_name,
-                            'department': worker.department,
-                            'work_class': worker.work_class,
-                            'location_name': worker.location_name
                         },
                     )
                     result[0].save()   # gross_payment calcuation için 
@@ -353,12 +356,6 @@ def bulk_set_gross_salaries(request):
                         defaults={
                             'gross_salary_hourly': gross_salary_hourly,
                             'currency': worker.currency,
-                            'group': worker.group,
-                            'short_class': worker.short_class,
-                            'class_name': worker.class_name,
-                            'department': worker.department,
-                            'work_class': worker.work_class,
-                            'location_name': worker.location_name
                         },
                     )
                     # yeni oluşturulan instance yine hesaplanmalı
@@ -459,6 +456,13 @@ def update_salary_record(request, salary_id):
             updated = form.save(commit=False)
             updated.currency = worker.currency
             updated.sicil_no = worker.sicil_no  # güvenlik
+            updated.group = worker.group
+            updated.short_class = worker.short_class
+            updated.class_name = worker.class_name
+            updated.department = worker.department
+            updated.work_class = worker.work_class
+            updated.location_name = worker.location_name
+            updated.bonus = worker.bonus
             updated.save()
 
             messages.success(request, "Salary record saved successfully.")
@@ -618,7 +622,6 @@ def import_workers(request):
                             "gross_payment_hourly": gross_hourly,
                             "update_date_user": update_date_user,
                             "bonus": row.get("bonus", 0),
-                            "location_name": lookup_ids.get("location_name_id"),
                             "author_id": request.user.id,
                             **lookup_ids
                         }

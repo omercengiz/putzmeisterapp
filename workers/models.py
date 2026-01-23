@@ -307,6 +307,16 @@ class Workers(BaseWorker):
                 }
             )
 
+            salary_obj.group = self.group
+            salary_obj.short_class = self.short_class
+            salary_obj.class_name = self.class_name
+            salary_obj.department = self.department
+            salary_obj.work_class = self.work_class
+            salary_obj.location_name = self.location_name
+            salary_obj.s_no = self.s_no
+            salary_obj.department_short_name = self.department_short_name
+            salary_obj.bonus = self.bonus
+
             salary_obj.gross_salary_hourly = self.gross_payment_hourly
             salary_obj.currency = self.currency
             salary_obj.sicil_no = self.sicil_no
@@ -345,7 +355,15 @@ class WorkerGrossMonthly(models.Model):
     class_name = models.ForeignKey(ClassName, on_delete=models.SET_NULL, null=True)
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
     work_class = models.ForeignKey(WorkClass, on_delete=models.SET_NULL, null=True)
-    location_name = models.ForeignKey(LocationName, on_delete=models.SET_NULL, null=True)   
+    location_name = models.ForeignKey(LocationName, on_delete=models.SET_NULL, null=True)
+    department_short_name = models.ForeignKey(DirectorName, on_delete=models.SET_NULL, null=True)
+    s_no = models.ForeignKey(CostCenter, on_delete=models.SET_NULL, null=True)
+
+    bonus = models.IntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        null=True,
+        blank=True
+    )
 
     gross_salary_hourly = models.DecimalField(max_digits=15, decimal_places=2)
     currency = models.ForeignKey("Currency", null=True, blank=True, on_delete=models.SET_NULL)  # 🔑 burası eklendi
@@ -380,6 +398,16 @@ class WorkerGrossMonthly(models.Model):
     def save(self, *args, **kwargs):
         if self.worker and not self.sicil_no:
             self.sicil_no = self.worker.sicil_no
+            self.group = self.worker.group
+            self.short_class = self.worker.short_class
+            self.class_name = self.worker.class_name
+            self.department = self.worker.department
+            self.work_class = self.worker.work_class
+            self.location_name = self.worker.location_name
+            self.department_short_name = self.worker.department_short_name
+            self.s_no = self.worker.s_no
+            self.currency = self.worker.currency
+            self.bonus = self.worker.bonus
 
         days = calendar.monthrange(self.year, self.month)[1]
 
@@ -402,6 +430,19 @@ class ArchivedWorkerGrossMonthly(models.Model):
 
     year = models.PositiveIntegerField()
     month = models.PositiveIntegerField()
+    group = models.ForeignKey(Group, on_delete=models.SET_NULL, null=True)
+    short_class = models.ForeignKey(ShortClass, on_delete=models.SET_NULL, null=True)
+    class_name = models.ForeignKey(ClassName, on_delete=models.SET_NULL, null=True)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True)
+    work_class = models.ForeignKey(WorkClass, on_delete=models.SET_NULL, null=True)
+    location_name = models.ForeignKey(LocationName, on_delete=models.SET_NULL, null=True)
+    department_short_name = models.ForeignKey(DirectorName, on_delete=models.SET_NULL, null=True)
+    s_no = models.ForeignKey(CostCenter, on_delete=models.SET_NULL, null=True)
+    bonus = models.IntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        null=True,
+        blank=True
+    )
     gross_salary_hourly = models.DecimalField(max_digits=15, decimal_places=2)
     currency = models.ForeignKey("Currency", null=True, blank=True, on_delete=models.SET_NULL)
     sicil_no = models.CharField(max_length=50, null=True, blank=True)

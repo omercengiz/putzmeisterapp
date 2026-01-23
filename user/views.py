@@ -84,26 +84,17 @@ def update_user_role(request, user_id):
 @admin_required
 def create_user(request):
     if request.method == 'POST':
-        user_id = request.POST.get('user_id')  # hidden input ile gelecek
+        user_id = request.POST.get('user_id')
         user_obj = get_object_or_404(User, pk=user_id) if user_id else None
 
-        # instance varsa UPDATE, yoksa CREATE
         form = CreateUserForm(request.POST, instance=user_obj)
+
         if form.is_valid():
             obj = form.save(commit=False)
-            # ToDO
-            # Parola: create'de zorunlu, update'te opsiyonel ama sonra bu kısmı regenerate password 
-            # veya invitation link ile yapabiliriz. Belli değil.
-            # reset butonu eklendi fakat henüz SMTP modülü eklenmedi.
-
-            email = obj.email.lower().strip()
-            if not email.endswith("@putzmeister.com"):
-                messages.warning(request, "Email must be a valid @putzmeister.com address")
-                return redirect("user:user_permission_dashboard")
 
             password = form.cleaned_data.get('password')
             if password:
-                obj.set_password(password)
+                obj.set_password(password)  # ✔ sadece doluysa
 
             obj.save()
 
@@ -111,18 +102,20 @@ def create_user(request):
             if role and role in dict(UserRole.ROLE_CHOICES):
                 UserRole.objects.update_or_create(user=obj, defaults={'role': role})
 
-            if user_obj:
-                messages.success(request, "User updated successfully.")
-            else:
-                messages.success(request, f"Kullanıcı '{obj.username}' başarıyla oluşturuldu.")
-
+            messages.success(
+                request,
+                "User updated successfully." if user_obj else "User created successfully."
+            )
             return redirect('user:user_permission_dashboard')
 
-        messages.error(request, "Lütfen hataları düzeltin.")
-        return redirect('user:user_permission_dashboard')
+        users = User.objects.all().order_by("id")
+        return render(request, 'user_permission_dashboard.html', {
+            'users': users,
+            'create_user_form': form
+        })
 
-    # GET yapıyoruz -> back to user_permission_dashboard
     return redirect('user:user_permission_dashboard')
+
 
 
 
