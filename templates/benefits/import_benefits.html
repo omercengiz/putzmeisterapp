@@ -1,4 +1,5 @@
 {% extends "layout.html" %}
+{% load static %}
 
 {% block body %}
 <div class="container mt-5">
@@ -9,6 +10,14 @@
       <div class="mb-4 text-center">
         <h2 class="fw-bold">Benefit Import</h2>
         <p class="text-muted">.xlsx formatında dosya yükleyin</p>
+      </div>
+      
+      <!-- Download Template Button -->
+      <div class="text-center mb-4">
+        <a href="{% static 'downloads/benefit_import_template.xlsx' %}"
+          class="btn btn-primary">
+          📄 Download Excel Template (Benefit)
+        </a>
       </div>
 
       <!-- Upload Form -->

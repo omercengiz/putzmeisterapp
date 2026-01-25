@@ -1,14 +1,45 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import HttpResponse
 from django.db import IntegrityError, transaction 
 from django.core.paginator import Paginator
 from datetime import timedelta, datetime, date
+from decimal import Decimal, InvalidOperation
 from .models import Benefit
 from workers.models import Workers
 from .forms import BenefitForm, BenefitBulkForm, BenefitImportForm
 import pandas as pd
 import datetime
+import math
+
+def parse_tr_decimal(value):
+    """
+    Türk Lirası formatını parse eder:
+    10.000,32 -> 10000.32
+    1.250 -> 1250
+    boş / NaN -> 0
+    """
+    if value is None:
+        return Decimal("0")
+
+    # pandas NaN
+    if isinstance(value, float) and math.isnan(value):
+        return Decimal("0")
+
+    try:
+        s = str(value).strip()
+
+        # Binlik ayırıcıyı kaldır
+        s = s.replace(".", "")
+
+        # Ondalık ayırıcıyı noktaya çevir
+        s = s.replace(",", ".")
+
+        return Decimal(s)
+    except (InvalidOperation, ValueError):
+        return Decimal("0")
+
 
 
 @login_required
@@ -282,15 +313,15 @@ def import_benefits(request):
                         year=year,
                         month=month,
                         defaults={
-                            "aile_yakacak": row.get("aile_yakacak", 0) or 0,
-                            "erzak": row.get("erzak", 0) or 0,
-                            "altin": row.get("altin", 0) or 0,
-                            "bayram": row.get("bayram", 0) or 0,
-                            "dogum_evlenme": row.get("dogum_evlenme", 0) or 0,
-                            "fon": row.get("fon", 0) or 0,
-                            "harcirah": row.get("harcirah", 0) or 0,
-                            "yol_parasi": row.get("yol_parasi", 0) or 0,
-                            "prim": row.get("prim", 0) or 0,
+                            "aile_yakacak": parse_tr_decimal(row.get("aile_yakacak", 0)),
+                            "erzak": parse_tr_decimal(row.get("erzak", 0)),
+                            "altin": parse_tr_decimal(row.get("altin", 0)),
+                            "bayram": parse_tr_decimal(row.get("bayram", 0)),
+                            "dogum_evlenme": parse_tr_decimal(row.get("dogum_evlenme", 0)),
+                            "fon": parse_tr_decimal(row.get("fon", 0)),
+                            "harcirah": parse_tr_decimal(row.get("harcirah", 0)),
+                            "yol_parasi": parse_tr_decimal(row.get("yol_parasi", 0)),
+                            "prim": parse_tr_decimal(row.get("prim", 0)),
                         }
                     )
 
@@ -304,3 +335,50 @@ def import_benefits(request):
         form = BenefitImportForm()
 
     return render(request, "benefits/import_benefits.html", {"form": form})
+
+
+@login_required
+def download_benefit_template(request):
+    columns = [
+        "sicil_no",
+        "year",
+        "month",
+        "aile_yakacak",
+        "erzak",
+        "altin",
+        "bayram",
+        "dogum_evlenme",
+        "fon",
+        "harcirah",
+        "yol_parasi",
+        "prim",
+    ]
+
+    # Kullanıcıya örnek olması için 1 satır
+    data = [{
+        "sicil_no": "123456",
+        "year": 2025,
+        "month": 1,
+        "aile_yakacak": 0,
+        "erzak": 0,
+        "altin": 0,
+        "bayram": 0,
+        "dogum_evlenme": 0,
+        "fon": 0,
+        "harcirah": 0,
+        "yol_parasi": 0,
+        "prim": 0,
+    }]
+
+    df = pd.DataFrame(data, columns=columns)
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = (
+        'attachment; filename="benefit_import_template.xlsx"'
+    )
+
+    df.to_excel(response, index=False)
+    return response
+
