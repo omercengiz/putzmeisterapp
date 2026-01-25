@@ -405,11 +405,26 @@ class WorkerGrossMonthly(models.Model):
             self.department_short_name = self.worker.department_short_name
             self.s_no = self.worker.s_no
             self.currency = self.worker.currency
-            if self.month == 1:
-                self.bonus = self.worker.bonus
-            else:
-                self.bonus = 0
 
+        # 🟢 Çalışanın ilgili yıl için ilk ayını bul
+        first_month = (
+            WorkerGrossMonthly.objects
+            .filter(worker=self.worker, year=self.year)
+            .exclude(pk=self.pk)
+            .order_by("month")
+            .values_list("month", flat=True)
+            .first()
+        )
+
+        # Eğer hiç kayıt yoksa → bu ay ilk aydır
+        is_first_month = first_month is None or self.month < first_month
+
+        if is_first_month:
+            self.bonus = self.worker.bonus
+        else:
+            self.bonus = 0
+
+        # calculate days in month
         days = calendar.monthrange(self.year, self.month)[1]
 
         # Saatlik ücret → günlük 7.5 saat * gün sayısı
