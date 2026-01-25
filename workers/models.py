@@ -246,8 +246,6 @@ class BaseWorker(models.Model):
     total_work_hours = models.DecimalField(max_digits=10, decimal_places=1, null=True, blank=True, default=225, verbose_name="Total Work Hours")
     update_date_user = models.DateField(null=True, blank=True)
     gross_payment = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
-
-    
     bonus = models.IntegerField(validators=[
         MinValueValidator(0),
         MaxValueValidator(100)
@@ -294,7 +292,7 @@ class Workers(BaseWorker):
         update_year = self.update_date_user.year
         start_month = self.update_date_user.month
 
-        # 🟢 Seçilen aydan yıl sonuna kadar WorkerGrossMonthly senkronu
+        # Seçilen aydan yıl sonuna kadar WorkerGrossMonthly senkronu
         for month in range(start_month, 13):
             salary_obj, created = WorkerGrossMonthly.objects.get_or_create(
                 worker=self,
