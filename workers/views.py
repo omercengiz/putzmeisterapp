@@ -14,7 +14,7 @@ import calendar
 import datetime
 import pandas as pd
 from benefits.models import Benefit, ArchivedBenefit
-
+from benefits.utils import is_after_exit
 
 
 
@@ -140,6 +140,12 @@ def deleteWorkers(request, id):
         return redirect("workers:dashboard")
 
     exit_date = request.POST.get('exit_date')
+    exit_date = datetime.datetime.strptime(exit_date, '%Y-%m-%d').date() if exit_date else None
+
+    if not exit_date:
+        messages.error(request, "Exit date is required for archiving the worker.")
+        return redirect("workers:dashboard")
+
     exit_reason_id = request.POST.get("exit_reason")
     exit_reason = ExitReason.objects.filter(id=exit_reason_id).first()
 
@@ -193,6 +199,9 @@ def deleteWorkers(request, id):
     benefits = Benefit.objects.filter(worker=worker)
     archived_benefits = []
     for b in benefits:
+        if is_after_exit(b.year, b.month, exit_date):
+            continue
+        
         archived_benefits.append(ArchivedBenefit(
             archived_worker=archived_worker,
             sicil_no=worker.sicil_no,
@@ -220,6 +229,8 @@ def deleteWorkers(request, id):
     archived_salaries = []
 
     for s in salaries:
+        if is_after_exit(s.year, s.month, exit_date):
+            continue
         archived_salaries.append(ArchivedWorkerGrossMonthly(
             archived_worker=archived_worker,
             year=s.year,
