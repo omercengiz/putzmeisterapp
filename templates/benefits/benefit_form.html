@@ -52,4 +52,67 @@
 
     </div>
 </div>
+<script>
+function addThousandsTR(num) {
+    num = num.replace(/\D/g, "");
+    return num.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".tr-money").forEach(function (input) {
+
+        /* -------- FOCUS -------- */
+        // Input'a tıklanınca sadece "0" ise sil
+        input.addEventListener("focus", function () {
+            if (this.value === "0") {
+                this.value = "";
+            }
+        });
+
+        /* -------- INPUT (LIVE FORMAT) -------- */
+        input.addEventListener("input", function () {
+            let value = this.value;
+
+            // sadece rakam ve virgül
+            value = value.replace(/[^0-9,]/g, "");
+
+            // birden fazla virgül varsa fazlasını at
+            const parts = value.split(",");
+            let intPart = parts[0] || "";
+            let decPart = parts[1] || "";
+
+            // decimal max 2 hane
+            decPart = decPart.slice(0, 2);
+
+            // integer kısmını formatla
+            intPart = addThousandsTR(intPart);
+
+            // virgül yazıldıysa koru
+            if (value.includes(",")) {
+                this.value = intPart + "," + decPart;
+            } else {
+                this.value = intPart;
+            }
+        });
+
+        /* -------- BLUR -------- */
+        input.addEventListener("blur", function () {
+            let value = this.value.trim();
+
+            if (value === "") {
+                this.value = "0";
+                return;
+            }
+
+            let [intPart, decPart] = value.split(",");
+
+            intPart = addThousandsTR(intPart || "");
+
+            this.value = decPart !== undefined
+                ? `${intPart},${decPart}`
+                : intPart;
+        });
+    });
+});
+</script>
 {% endblock %}

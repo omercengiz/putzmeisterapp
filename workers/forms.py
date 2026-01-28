@@ -18,6 +18,7 @@ class WorkersForm(forms.ModelForm):
             "name_surname", 
             "date_of_recruitment",
             "work_class", 
+            "location_name",
             "class_name",
             "gross_payment",
             "currency",
@@ -40,6 +41,16 @@ class WorkersForm(forms.ModelForm):
         else:
             # instance.pk yoksa update mode
             self.fields['update_date_user'].required = False
+
+    def clean_gross_payment(self):
+        gross_payment = self.cleaned_data.get("gross_payment")
+
+        if gross_payment is None or gross_payment <= 0:
+            raise forms.ValidationError(
+                "Gross payment must be greater than 0."
+            )
+
+        return gross_payment
 
 
 MONTH_CHOICES = [(m, calendar.month_name[m]) for m in range(1, 13)]

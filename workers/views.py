@@ -5,7 +5,7 @@ from django.contrib import messages
 from .models import Workers, ArchivedWorker, WorkerGrossMonthly, ArchivedWorkerGrossMonthly
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
-from .lookups import Group, ShortClass, DirectorName, Currency, WorkClass, ClassName, Department, CostCenter, ExitReason
+from .lookups import Group, ShortClass, DirectorName, Currency, WorkClass, ClassName, Department, CostCenter, ExitReason, LocationName
 from django.forms import modelform_factory
 from django.views.decorators.http import require_POST
 from django.apps import apps
@@ -14,7 +14,7 @@ import calendar
 import datetime
 import pandas as pd
 from benefits.models import Benefit, ArchivedBenefit
-
+from benefits.utils import is_after_exit
 
 
 
@@ -27,6 +27,7 @@ lookup_models = {
     "ClassName": ClassName,
     "Department": Department,
     "CostCenter": CostCenter,
+    "LocationName": LocationName,
     "ExitReason": ExitReason,
 }
 
@@ -139,6 +140,12 @@ def deleteWorkers(request, id):
         return redirect("workers:dashboard")
 
     exit_date = request.POST.get('exit_date')
+    exit_date = datetime.datetime.strptime(exit_date, '%Y-%m-%d').date() if exit_date else None
+
+    if not exit_date:
+        messages.error(request, "Exit date is required for archiving the worker.")
+        return redirect("workers:dashboard")
+
     exit_reason_id = request.POST.get("exit_reason")
     exit_reason = ExitReason.objects.filter(id=exit_reason_id).first()
 
@@ -192,6 +199,9 @@ def deleteWorkers(request, id):
     benefits = Benefit.objects.filter(worker=worker)
     archived_benefits = []
     for b in benefits:
+        if is_after_exit(b.year, b.month, exit_date):
+            continue
+        
         archived_benefits.append(ArchivedBenefit(
             archived_worker=archived_worker,
             sicil_no=worker.sicil_no,
@@ -219,10 +229,21 @@ def deleteWorkers(request, id):
     archived_salaries = []
 
     for s in salaries:
+        if is_after_exit(s.year, s.month, exit_date):
+            continue
         archived_salaries.append(ArchivedWorkerGrossMonthly(
             archived_worker=archived_worker,
             year=s.year,
             month=s.month,
+            group=s.group,
+            short_class=s.short_class,
+            class_name=s.class_name,
+            department=s.department,
+            work_class=s.work_class,
+            location_name=s.location_name,
+            department_short_name=s.department_short_name,
+            s_no=s.s_no,
+            bonus=s.bonus,
             gross_salary_hourly=s.gross_salary_hourly,
             currency=s.currency,
             sicil_no=s.sicil_no,
@@ -332,7 +353,7 @@ def bulk_set_gross_salaries(request):
                         month=m,
                         defaults={
                             'gross_salary_hourly': gross_salary_hourly,
-                            'currency': worker.currency
+                            'currency': worker.currency,
                         },
                     )
                     result[0].save()   # gross_payment calcuation için 
@@ -345,7 +366,7 @@ def bulk_set_gross_salaries(request):
                         month=m,
                         defaults={
                             'gross_salary_hourly': gross_salary_hourly,
-                            'currency': worker.currency
+                            'currency': worker.currency,
                         },
                     )
                     # yeni oluşturulan instance yine hesaplanmalı
@@ -446,6 +467,17 @@ def update_salary_record(request, salary_id):
             updated = form.save(commit=False)
             updated.currency = worker.currency
             updated.sicil_no = worker.sicil_no  # güvenlik
+            updated.group = worker.group
+            updated.short_class = worker.short_class
+            updated.class_name = worker.class_name
+            updated.department = worker.department
+            updated.work_class = worker.work_class
+            updated.location_name = worker.location_name
+            if updated.month == 1:
+                updated.bonus = worker.bonus
+            else:
+                updated.bonus = 0
+
             updated.save()
 
             messages.success(request, "Salary record saved successfully.")
@@ -539,6 +571,7 @@ def import_workers(request):
                     "Department": "department",
                     "Currency": "currency",
                     "Bonus": "bonus",
+                    "Location": "location_name",
                     "Gross payment": "gross_payment",           
                     "Update Date": "update_date_user",             
                 }
@@ -548,7 +581,7 @@ def import_workers(request):
 
                 required = ["group","s_no","short_class","department_short_name",
                             "name_surname","date_of_recruitment","work_class",
-                            "class_name","department","currency","sicil_no"]
+                            "class_name","department","currency","sicil_no","location_name"]
 
                 missing = [c for c in required if c not in df.columns]
                 if missing:
@@ -564,6 +597,7 @@ def import_workers(request):
                     "work_class": (WorkClass, "name"),
                     "class_name": (ClassName, "name"),
                     "department": (Department, "name"),
+                    "location_name": (LocationName, "name"),
                 }
 
                 for index, row in df.iterrows():

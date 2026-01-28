@@ -1,15 +1,73 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import HttpResponse
 from django.db import IntegrityError, transaction 
 from django.core.paginator import Paginator
 from datetime import timedelta, datetime, date
+from decimal import Decimal, InvalidOperation
+from hijridate import Hijri
 from .models import Benefit
 from workers.models import Workers
 from .forms import BenefitForm, BenefitBulkForm, BenefitImportForm
 import pandas as pd
+from .utils import parse_tr_decimal
 import datetime
+import math
 
+
+def get_bayram_months_for_year(year: int):
+    """
+    Verilen miladi yıl için Ramazan + Kurban Bayramlarının
+    denk geldiği AY numaralarını döner.
+
+    Örn: {3, 5}
+    """
+    approx_hijri_year = int((year - 622) * 33 / 32)
+
+    months = set()
+
+    for hy in range(approx_hijri_year - 1, approx_hijri_year + 3):
+        # Ramazan Bayramı → Şevval 1
+        g1 = Hijri(hy, 10, 1).to_gregorian()
+        # Kurban Bayramı → Zilhicce 10
+        g2 = Hijri(hy, 12, 10).to_gregorian()
+
+        if g1.year == year:
+            months.add(g1.month)
+        if g2.year == year:
+            months.add(g2.month)
+
+    return months
+
+def parse_bayram_by_year(value, year, month):
+    """
+    Bayram sadece Ramazan/Kurban bayramının olduğu AYDA girilir.
+    Diğer aylarda otomatik 0.
+    """
+    bayram_months = get_bayram_months_for_year(year)
+    if month in bayram_months:
+        return parse_tr_decimal(value)
+    return Decimal("0")
+
+
+def parse_erzak_by_month(value, month):
+    """
+    Erzak sadece 3,6,9,12 aylarda girilir
+    Diğer aylarda otomatik 0 basılır
+    """
+    if month in (3, 6, 9, 12):
+        return parse_tr_decimal(value)
+    return Decimal("0")
+
+def parse_value_by_allowed_months(value, month, allowed_months):
+    """
+    Değer sadece allowed_months içindeyse alınır,
+    aksi halde otomatik 0 basılır
+    """
+    if month in allowed_months:
+        return parse_tr_decimal(value)
+    return Decimal("0")
 
 @login_required
 def benefit_list(request):
@@ -129,6 +187,17 @@ def benefit_bulk(request):
             with transaction.atomic():
                 for w in workers:
                     for m in months:
+                        defaults_common = {
+                            "aile_yakacak": parse_tr_decimal(form.cleaned_data["aile_yakacak"]),
+                            "erzak": parse_erzak_by_month(form.cleaned_data["erzak"], m),
+                            "altin": parse_value_by_allowed_months(form.cleaned_data["altin"], m, (12,)),
+                            "fon": parse_value_by_allowed_months(form.cleaned_data["fon"], m, (12,)),
+                            "bayram": parse_bayram_by_year(form.cleaned_data["bayram"], year, m),
+                            "dogum_evlenme": parse_tr_decimal(form.cleaned_data["dogum_evlenme"]),
+                            "harcirah": parse_tr_decimal(form.cleaned_data["harcirah"]),
+                            "yol_parasi": parse_tr_decimal(form.cleaned_data["yol_parasi"]),
+                            "prim": parse_tr_decimal(form.cleaned_data["prim"]),
+                        }
                         if overwrite:
                             obj, created = Benefit.objects.update_or_create(
                                 worker=w,
@@ -165,6 +234,18 @@ def benefit_bulk(request):
 
         with transaction.atomic():
             for m in months:
+                defaults_common = {
+                    "aile_yakacak": parse_tr_decimal(form.cleaned_data["aile_yakacak"]),
+                    "erzak": parse_erzak_by_month(form.cleaned_data["erzak"], m),
+                    "altin": parse_value_by_allowed_months(form.cleaned_data["altin"], m, (12,)),
+                    "fon": parse_value_by_allowed_months(form.cleaned_data["fon"], m, (12,)),
+                    "bayram": parse_bayram_by_year(form.cleaned_data["bayram"], year, m),
+                    "dogum_evlenme": parse_tr_decimal(form.cleaned_data["dogum_evlenme"]),
+                    "harcirah": parse_tr_decimal(form.cleaned_data["harcirah"]),
+                    "yol_parasi": parse_tr_decimal(form.cleaned_data["yol_parasi"]),
+                    "prim": parse_tr_decimal(form.cleaned_data["prim"]),
+                }
+
                 if overwrite:
                     obj, created = Benefit.objects.update_or_create(
                         worker=worker,
@@ -194,53 +275,6 @@ def benefit_bulk(request):
 
     return render(request, "benefits/benefit_bulk_form.html", {"form": form, "title": "Bulk Add/Update Benefits"})
 
-    form = BenefitBulkForm(request.POST or None)
-    if request.method == "POST" and form.is_valid():
-        worker = form.cleaned_data["worker"]
-        year   = form.cleaned_data["year"]
-        months = form.cleaned_data["months"]
-        overwrite = form.cleaned_data["overwrite_existing"]
-
-        defaults_common = {
-            "aile_yakacak": form.cleaned_data["aile_yakacak"],
-            "erzak":         form.cleaned_data["erzak"],
-            "altin":         form.cleaned_data["altin"],
-            "bayram":        form.cleaned_data["bayram"],
-            "dogum_evlenme": form.cleaned_data["dogum_evlenme"],
-            "fon":           form.cleaned_data["fon"],
-            "harcirah":      form.cleaned_data["harcirah"],
-            "yol_parasi":    form.cleaned_data["yol_parasi"],
-            "prim":          form.cleaned_data["prim"],
-        }
-
-        created_count = 0
-        updated_count = 0
-
-        with transaction.atomic():
-            for m in months:
-                if overwrite:
-                    obj, created = Benefit.objects.update_or_create(
-                        worker=worker,
-                        year=year,
-                        month=m,
-                        defaults=defaults_common
-                    )
-                    if created:
-                        created_count += 1
-                    else:
-                        updated_count += 1
-                else:
-                    if not Benefit.objects.filter(worker=worker, year=year, month=m).exists():
-                        Benefit.objects.create(worker=worker, year=year, month=m, **defaults_common)
-                        created_count += 1
-
-        messages.success(
-            request,
-            f"İşlem tamamlandı: {created_count} yeni kayıt, {updated_count} güncelleme."
-        )
-        return redirect("benefits:list")
-
-    return render(request, "benefits/benefit_bulk_form.html", {"form": form, "title": "Bulk Add/Update Benefits"})
 
 @login_required
 def import_benefits(request):
@@ -282,15 +316,15 @@ def import_benefits(request):
                         year=year,
                         month=month,
                         defaults={
-                            "aile_yakacak": row.get("aile_yakacak", 0) or 0,
-                            "erzak": row.get("erzak", 0) or 0,
-                            "altin": row.get("altin", 0) or 0,
-                            "bayram": row.get("bayram", 0) or 0,
-                            "dogum_evlenme": row.get("dogum_evlenme", 0) or 0,
-                            "fon": row.get("fon", 0) or 0,
-                            "harcirah": row.get("harcirah", 0) or 0,
-                            "yol_parasi": row.get("yol_parasi", 0) or 0,
-                            "prim": row.get("prim", 0) or 0,
+                            "aile_yakacak": parse_tr_decimal(row.get("aile_yakacak", 0)),
+                            "erzak": parse_erzak_by_month(row.get("erzak"), month),
+                            "altin": parse_value_by_allowed_months(row.get("altin"), month, allowed_months=(12,)),
+                            "bayram": parse_bayram_by_year(row.get("bayram", 0), year, month),
+                            "dogum_evlenme": parse_tr_decimal(row.get("dogum_evlenme", 0)),
+                            "fon": parse_value_by_allowed_months(row.get("fon"), month, allowed_months=(12,)),
+                            "harcirah": parse_tr_decimal(row.get("harcirah", 0)),
+                            "yol_parasi": parse_tr_decimal(row.get("yol_parasi", 0)),
+                            "prim": parse_tr_decimal(row.get("prim", 0)),
                         }
                     )
 
@@ -304,3 +338,50 @@ def import_benefits(request):
         form = BenefitImportForm()
 
     return render(request, "benefits/import_benefits.html", {"form": form})
+
+
+@login_required
+def download_benefit_template(request):
+    columns = [
+        "sicil_no",
+        "year",
+        "month",
+        "aile_yakacak",
+        "erzak",
+        "altin",
+        "bayram",
+        "dogum_evlenme",
+        "fon",
+        "harcirah",
+        "yol_parasi",
+        "prim",
+    ]
+
+    # Kullanıcıya örnek olması için 1 satır
+    data = [{
+        "sicil_no": "123456",
+        "year": 2025,
+        "month": 1,
+        "aile_yakacak": 0,
+        "erzak": 0,
+        "altin": 0,
+        "bayram": 0,
+        "dogum_evlenme": 0,
+        "fon": 0,
+        "harcirah": 0,
+        "yol_parasi": 0,
+        "prim": 0,
+    }]
+
+    df = pd.DataFrame(data, columns=columns)
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = (
+        'attachment; filename="benefit_import_template.xlsx"'
+    )
+
+    df.to_excel(response, index=False)
+    return response
+
