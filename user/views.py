@@ -6,7 +6,8 @@ from django.contrib.auth import login, authenticate, logout, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from .models import UserRole
-
+from functools import wraps
+from .permissions import admin_only
 
 # Create your views here.
 def register(request):
@@ -55,23 +56,8 @@ def logoutUser(request):
     #messages.success(request, "You logged out successfully...")
     return redirect("user:login")
 
-
-def admin_required(view_func):
-    def wrapper(request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return redirect('user:login')  
-        if request.user.is_superuser:
-            return view_func(request, *args, **kwargs)
-        if not hasattr(request.user, 'role_info'):
-            return render(request, '403.html', status=403)
-        if request.user.role_info.role != 'admin':
-            return render(request, '403.html', status=403)
-        return view_func(request, *args, **kwargs)
-    return wrapper
-
-
 @login_required
-@admin_required
+@admin_only
 def update_user_role(request, user_id):
     user = get_object_or_404(User, id=user_id)
     if request.method == 'POST':
@@ -81,7 +67,7 @@ def update_user_role(request, user_id):
     return redirect('user:user_permission_dashboard')
 
 
-@admin_required
+@admin_only
 def create_user(request):
     if request.method == 'POST':
         user_id = request.POST.get('user_id')
@@ -119,7 +105,7 @@ def create_user(request):
 
 
 
-@admin_required
+@admin_only
 def user_permission_dashboard(request):
     users = User.objects.all().order_by("id")
     form = CreateUserForm()
@@ -131,20 +117,19 @@ def user_permission_dashboard(request):
 
 
 @login_required
-@admin_required
+@admin_only
 @require_POST
 def delete_user(request, user_id):
     User = get_user_model()
     target = get_object_or_404(User, pk=user_id)
 
-    # Kendini silme koruması yarattık bu önemli 
-    if target.id == request.user.id:
-        messages.error(request, "You cannot delete your own account.")
+    # Root kullanıcısını silme koruması
+    if target.username.lower() == 'root' or target.id == 1:
+        messages.warning(request, "Root user cannot be deleted.")
         return redirect('user:user_permission_dashboard')
 
-    # Süper kullanıcıyı ancak süper kullanıcı silebilsin (opsiyonel ama iyi pratik)
-    if target.is_superuser and not request.user.is_superuser:
-        messages.error(request, "Admin users can only be deleted by other admins.")
+    if target.id == request.user.id:
+        messages.warning(request, "You cannot delete your own account.")
         return redirect('user:user_permission_dashboard')
 
     # Sil ve rol kaydını otomatik cascadeliyorsa ekstra işleme gerek yok

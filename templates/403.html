@@ -1,7 +1,111 @@
 {% extends "layout.html" %}
 {% block body %}
-<div class="alert alert-danger mt-5 text-center" role="alert">
-  <h4 class="alert-heading">403 - Unauthorized</h4>
-  <p>You do not have permission to access this page.</p>
+
+<style>
+  .forbidden-wrapper {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .forbidden-card {
+    max-width: 640px;
+    width: 100%;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #fff 0%, #fff5f5 100%);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.12);
+    border: 1px solid rgba(220, 53, 69, 0.25);
+    padding: 48px 40px;
+    text-align: center;
+  }
+
+  .forbidden-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    margin: 0 auto 20px auto;
+  }
+
+  .forbidden-code {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: #dc3545;
+    margin-bottom: 6px;
+  }
+
+  .forbidden-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #212529;
+  }
+
+  .forbidden-text {
+    font-size: 15px;
+    color: #6c757d;
+    margin-bottom: 28px;
+    line-height: 1.6;
+  }
+
+  .forbidden-footer {
+    border-top: 1px solid #f1c6cb;
+    padding-top: 18px;
+    font-size: 13px;
+    color: #868e96;
+  }
+  .forbidden-card {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+    transition: opacity 0.45s ease, transform 0.45s ease;
+  }
+
+  .forbidden-card.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+</style>
+
+<div class="forbidden-wrapper">
+  <div class="forbidden-card">
+
+    <div class="forbidden-icon">
+      🚫
+    </div>
+    <div class="forbidden-title">
+      Access Denied
+    </div>
+
+    <p class="forbidden-text">
+      You don’t have permission to access this page.<br>
+      This action is restricted based on your current role or permissions.
+    </p>
+
+    <div class="forbidden-footer">
+      If you believe this is an error, please contact your system administrator.
+    </div>
+
+  </div>
 </div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const card = document.querySelector(".forbidden-card");
+    if (card) {
+      requestAnimationFrame(() => {
+        card.classList.add("is-visible");
+      });
+    }
+  });
+</script>
+
+
 {% endblock %}

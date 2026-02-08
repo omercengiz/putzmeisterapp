@@ -1,4 +1,5 @@
 from django.shortcuts import render, HttpResponse, redirect, get_object_or_404
+from user.permissions import write_access_required
 from .forms import WorkersForm, GrossSalaryBulkForm, WorkerGrossMonthlyForm, WorkerImportForm
 from django.core.paginator import Paginator
 from django.contrib import messages
@@ -78,6 +79,7 @@ def dashboard(request):
 
 
 @login_required(login_url="user:login")
+@write_access_required
 def AddWorkers(request):
     form = WorkersForm(request.POST or None)
     
@@ -102,6 +104,7 @@ def AddWorkers(request):
 
 
 @login_required(login_url="user:login")
+@write_access_required
 def updateWorkers(request, id):
     worker = get_object_or_404(Workers, id=id)
     form = WorkersForm(request.POST or None, instance=worker)
@@ -127,6 +130,7 @@ def updateWorkers(request, id):
 
 @login_required(login_url="user:login")
 @require_POST
+@write_access_required
 def deleteWorkers(request, id):
     worker = get_object_or_404(Workers, id=id)
 
@@ -268,7 +272,7 @@ def deleteWorkers(request, id):
     return redirect("workers:dashboard")
 
 
-
+@write_access_required
 def manage_lookups(request):
     forms_and_items = []
 
@@ -324,7 +328,7 @@ def update_lookup(request, model_name, pk):
 
     return redirect('manage_lookups')
 
-
+@write_access_required
 def bulk_set_gross_salaries(request):
     if request.method == "POST":
         form = GrossSalaryBulkForm(request.POST)
@@ -382,6 +386,7 @@ def bulk_set_gross_salaries(request):
 
 
 @login_required
+@write_access_required
 def update_salary_record(request, salary_id):
 
     # Yeni kayıt kontrolü
@@ -538,7 +543,7 @@ def list_worker_salaries(request, worker_id):
     })
 
 
-
+@write_access_required
 def delete_salary_record(request, salary_id):
     salary = get_object_or_404(WorkerGrossMonthly, pk=salary_id)
     worker_id = salary.worker.id
@@ -548,6 +553,7 @@ def delete_salary_record(request, salary_id):
     return redirect("workers:list_worker_salaries", worker_id=worker_id)
 
 @login_required
+@write_access_required
 def import_workers(request):
     if request.method == "POST":
         form = WorkerImportForm(request.POST, request.FILES)
