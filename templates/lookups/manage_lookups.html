@@ -12,7 +12,8 @@
   {% for block in forms_and_items %}
     <div class="card mb-4 border-0 shadow-sm rounded-3 bg-white">
       <div class="card-header bg-light d-flex justify-content-between align-items-center toggle-header"
-           style="cursor: pointer; padding: 1rem 1.25rem;">
+           style="cursor: pointer; padding: 1rem 1.25rem;"
+           data-section="{{ block.name }}">
         <div class="fw-semibold text-dark">{{ block.name }}</div>
         <div class="toggle-icon fs-5 text-success">▼</div>
       </div>
@@ -105,24 +106,87 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-  // Accordion
+  const STORAGE_KEY = 'lookup_accordion_states';
+  const SUBMIT_FLAG_KEY = 'lookup_form_submitted';
+
+  // Form submit edildiğinde flag set et
+  function setFormSubmitFlag() {
+    sessionStorage.setItem(SUBMIT_FLAG_KEY, 'true');
+  }
+
+  // Sayfa yüklenirken kontrolü yap
+  function shouldClearStorage() {
+    const navEntries = performance.getEntriesByType('navigation');
+    const isFormSubmit = sessionStorage.getItem(SUBMIT_FLAG_KEY) === 'true';
+    
+    // Form submit flag'ini temizle
+    sessionStorage.removeItem(SUBMIT_FLAG_KEY);
+    
+    // Eğer form submit değilse storage'ı temizle
+    // (manuel refresh, başka sayfadan gelme, vb.)
+    return !isFormSubmit;
+  }
+
+  // Storage'ı temizle gerekirse
+  if (shouldClearStorage()) {
+    sessionStorage.removeItem(STORAGE_KEY);
+  }
+
+  // Durumu sessionStorage'a kaydet
+  function saveState() {
+    const states = {};
+    document.querySelectorAll('.toggle-header').forEach(header => {
+      const sectionName = header.dataset.section;
+      const body = header.nextElementSibling;
+      states[sectionName] = !body.classList.contains('d-none');
+    });
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(states));
+  }
+
+  // Durumu sessionStorage'dan yükle
+  function loadState() {
+    const savedStates = sessionStorage.getItem(STORAGE_KEY);
+    if (savedStates) {
+      return JSON.parse(savedStates);
+    }
+    return {};
+  }
+
+  // Accordion başlat
   const toggles = document.querySelectorAll('.toggle-header');
   const toggleAllBtn = document.getElementById('toggle-all');
+  const savedStates = loadState();
 
   toggles.forEach(header => {
     const body = header.nextElementSibling;
     const icon = header.querySelector('.toggle-icon');
-    body.classList.add('d-none');
-    icon.textContent = '▼';
+    const sectionName = header.dataset.section;
+
+    // Kaydedilmiş durum varsa onu uygula, yoksa kapalı başlat
+    if (savedStates[sectionName]) {
+      body.classList.remove('d-none');
+      icon.textContent = '▲';
+    } else {
+      body.classList.add('d-none');
+      icon.textContent = '▼';
+    }
+
+    // Tıklama eventi
     header.addEventListener('click', () => {
       const isOpen = !body.classList.contains('d-none');
       body.classList.toggle('d-none');
       icon.textContent = isOpen ? '▼' : '▲';
+      saveState();
+      updateToggleAllButton();
     });
   });
 
   function anyOpen() {
     return Array.from(toggles).some(h => !h.nextElementSibling.classList.contains('d-none'));
+  }
+
+  function updateToggleAllButton() {
+    toggleAllBtn.textContent = anyOpen() ? 'Collapse all' : 'Expand all';
   }
 
   toggleAllBtn.addEventListener('click', () => {
@@ -138,11 +202,21 @@ document.addEventListener('DOMContentLoaded', function () {
         icon.textContent = '▼';
       }
     });
-    toggleAllBtn.textContent = shouldOpen ? 'Collapse all' : 'Expand all';
+    saveState();
+    updateToggleAllButton();
   });
-  toggleAllBtn.textContent = 'Expand all';
 
-  // ===== Edit modal logic (single-field for all, two-fields for CostCenter) =====
+  updateToggleAllButton();
+
+  // Form submit edilmeden önce flag set et ve durumu kaydet
+  document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function() {
+      setFormSubmitFlag();
+      saveState();
+    });
+  });
+
+  // ===== Edit modal logic =====
   const editForm   = document.getElementById('editLookupForm');
   const field1Wrap = document.getElementById('groupField1');
   const field2Wrap = document.getElementById('groupField2');
@@ -152,28 +226,24 @@ document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('.open-edit-modal').forEach(btn => {
     btn.addEventListener('click', function () {
       const updateUrl = this.dataset.updateUrl;
-      const prefix    = this.dataset.prefix;   // model adı (prefix)
-      const field1    = this.dataset.field1;   // tek alanlı modellerde ilk alan adı
-      const field2    = this.dataset.field2;   // sadece CostCenter'da "name", aksi halde boş
+      const prefix    = this.dataset.prefix;
+      const field1    = this.dataset.field1;
+      const field2    = this.dataset.field2;
       const value1    = this.dataset.value1 || '';
       const value2    = this.dataset.value2 || '';
 
-      // Form action
       editForm.setAttribute('action', updateUrl);
 
-      // Field 1: her zaman aktif
       input1.value = value1;
       input1.setAttribute('name', `${prefix}-${field1}`);
       field1Wrap.querySelector('label').textContent = (field1 || 'Field 1').replace(/_/g, ' ');
 
-      // Field 2: sadece CostCenter
       if (field2) {
         input2.value = value2;
         input2.setAttribute('name', `${prefix}-${field2}`);
         field2Wrap.classList.remove('d-none');
         field2Wrap.querySelector('label').textContent = field2.replace(/_/g, ' ');
       } else {
-        // field2 yoksa input2'yi pasifle
         input2.value = '';
         input2.removeAttribute('name');
         field2Wrap.classList.add('d-none');

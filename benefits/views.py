@@ -7,6 +7,7 @@ from django.core.paginator import Paginator
 from datetime import timedelta, datetime, date
 from decimal import Decimal, InvalidOperation
 from hijridate import Hijri
+from user.permissions import write_access_required
 from .models import Benefit
 from workers.models import Workers
 from .forms import BenefitForm, BenefitBulkForm, BenefitImportForm
@@ -124,6 +125,7 @@ def benefit_list(request):
 
 
 @login_required
+@write_access_required
 def benefit_create(request):
     form = BenefitForm(request.POST or None)
     if form.is_valid():
@@ -137,6 +139,7 @@ def benefit_create(request):
     return render(request, 'benefits/benefit_form.html', {'form': form, 'title': 'New Benefit'})
 
 @login_required
+@write_access_required
 def benefit_update(request, pk):
     benefit = get_object_or_404(Benefit, pk=pk)
     form = BenefitForm(request.POST or None, instance=benefit)
@@ -150,6 +153,7 @@ def benefit_update(request, pk):
     return render(request, 'benefits/benefit_form.html', {'form': form, 'title': 'Update Benefit'})
 
 @login_required
+@write_access_required
 def benefit_delete(request, pk):
     benefit = get_object_or_404(Benefit, pk=pk)
     benefit.delete()
@@ -157,6 +161,7 @@ def benefit_delete(request, pk):
     return redirect('benefits:list')
 
 @login_required
+@write_access_required
 def benefit_bulk(request):
     form = BenefitBulkForm(request.POST or None)
 
@@ -277,6 +282,7 @@ def benefit_bulk(request):
 
 
 @login_required
+@write_access_required
 def import_benefits(request):
     if request.method == "POST":
         form = BenefitImportForm(request.POST, request.FILES)
