@@ -15,7 +15,7 @@ import calendar
 import datetime
 import pandas as pd
 from benefits.models import Benefit, ArchivedBenefit
-from benefits.utils import is_after_exit
+from benefits.utils import is_after_exit, parse_tr_decimal
 
 
 
@@ -577,7 +577,7 @@ def import_workers(request):
                     "Department": "department",
                     "Currency": "currency",
                     "Bonus": "bonus",
-                    "Location": "location_name",
+                    "LocationName": "location_name",
                     "Gross payment": "gross_payment",           
                     "Update Date": "update_date_user",             
                 }
@@ -615,7 +615,7 @@ def import_workers(request):
                         date_val = datetime.datetime.strptime(date_val, "%Y-%m-%d")
 
                     # 🔥 excelden gross payment / update tarihini al
-                    gross_payment = row.get("gross_payment", None)
+                    gross_payment = parse_tr_decimal(row.get("gross_payment", None))
                     update_date_user = row.get("update_date_user", None)
 
                     # convert update_date format
@@ -631,7 +631,8 @@ def import_workers(request):
                     for col, (Model, field) in lookups.items():
                         value = row.get(col)
                         obj = Model.objects.filter(**{field: value}).first()
-                        lookup_ids[f"{col}_id"] = obj.id
+                        lookup_ids[f"{col}_id"] = obj.id if obj else None
+
 
                     # 🔥 Worker Insert/Update
                     worker_obj, created = Workers.objects.update_or_create(
