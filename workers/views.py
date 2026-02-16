@@ -593,6 +593,25 @@ def import_workers(request):
                 if missing:
                     messages.error(request,f"❌ Eksik kolon: {', '.join(missing)}")
                     return redirect("workers:import_workers")
+                
+                excel_sicils = (
+                    df["sicil_no"]
+                    .astype(str)
+                    .str.strip()
+                )
+
+                excel_sicils = [s for s in excel_sicils if s and s.lower() != "nan"]
+                excel_sicils_unique = list(set(excel_sicils))
+
+                archived_hits = list(
+                    ArchivedWorker.objects
+                    .filter(sicil_no__in=excel_sicils_unique)
+                    .values_list("sicil_no", flat=True)
+                )
+
+                if archived_hits:
+                    messages.error(request,"Some ID numbers already exist in the archived records. Please check the Archived table.")
+                    return redirect("workers:import_workers")
 
                 lookups = {
                     "s_no": (CostCenter, "code"),
