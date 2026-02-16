@@ -692,6 +692,15 @@ def import_workers(request):
                             salary_obj.gross_salary_hourly = gross_hourly
                             salary_obj.currency = worker_obj.currency
                             salary_obj.sicil_no = worker_obj.sicil_no
+                            salary_obj.group = worker_obj.group
+                            salary_obj.short_class = worker_obj.short_class
+                            salary_obj.class_name = worker_obj.class_name
+                            salary_obj.department = worker_obj.department
+                            salary_obj.work_class = worker_obj.work_class
+                            salary_obj.location_name = worker_obj.location_name
+                            salary_obj.department_short_name = worker_obj.department_short_name
+                            salary_obj.s_no = worker_obj.s_no
+
                             salary_obj.gross_payment = Decimal(str(gross_hourly)) * Decimal("7.5") * days
 
                             salary_obj.save()
