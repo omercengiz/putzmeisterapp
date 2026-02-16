@@ -119,7 +119,7 @@ def updateWorkers(request, id):
 
         #if sicil_no exists then check(overlap)
         if exists_workers or exits_archived:
-            form.add_error("sicil_no", "This Sicil No is already used by another worker.")
+            form.add_error("sicil_no", "This ID No can be already used. Please check archived workers.")
         else:
             updated_worker.save()
             messages.success(request, "Information of the worker has been updated successfully.")
