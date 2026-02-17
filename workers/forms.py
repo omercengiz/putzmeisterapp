@@ -159,7 +159,21 @@ class WorkerGrossMonthlyForm(forms.ModelForm):
     )
     class Meta:
         model = WorkerGrossMonthly
-        fields = ["year", "month", "gross_salary_hourly", "currency"]
+        fields = [
+            "year",
+            "month",
+            "gross_salary_hourly",
+            "currency",
+            "bonus",
+            "group",
+            "short_class",
+            "class_name",
+            "department",
+            "work_class",
+            "location_name",
+            "department_short_name",
+            "s_no",
+        ]
         widgets = {
             "year": forms.NumberInput(attrs={"min": 2000, "max": 2100}),
             "month": forms.NumberInput(attrs={"min": 1, "max": 12}),

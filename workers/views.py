@@ -472,12 +472,16 @@ def update_salary_record(request, salary_id):
             updated = form.save(commit=False)
             updated.currency = worker.currency
             updated.sicil_no = worker.sicil_no  # güvenlik
-            updated.group = worker.group
-            updated.short_class = worker.short_class
-            updated.class_name = worker.class_name
-            updated.department = worker.department
-            updated.work_class = worker.work_class
-            updated.location_name = worker.location_name
+            if is_new_record:
+                updated.group = worker.group
+                updated.short_class = worker.short_class
+                updated.class_name = worker.class_name
+                updated.department = worker.department
+                updated.work_class = worker.work_class
+                updated.location_name = worker.location_name
+                updated.department_short_name = worker.department_short_name
+                updated.s_no = worker.s_no
+                
             if updated.month == 1:
                 updated.bonus = worker.bonus
             else:
