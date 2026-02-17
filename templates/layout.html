@@ -52,10 +52,18 @@
 
     <!-- Global Tooltip Init -->
     <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-        [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el));
-    });
+      document.addEventListener("DOMContentLoaded", function () {
+
+          // 5 saniye sonra tüm alertleri kapat
+          setTimeout(function () {
+              const alerts = document.querySelectorAll('.alert');
+              alerts.forEach(function (alert) {
+                  const bsAlert = new bootstrap.Alert(alert);
+                  bsAlert.close();
+              });
+          }, 2000);
+
+      });
     </script>
 
 </body>
