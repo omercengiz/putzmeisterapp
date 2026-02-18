@@ -134,7 +134,7 @@ class BenefitBulkForm(forms.Form):
     overwrite_existing = forms.BooleanField(
         required=False,
         initial=True,
-        label="Aynı ay zaten varsa overwrite et"
+        label="If the month already exists, update it."
     )
 
     # Values

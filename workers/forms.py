@@ -105,7 +105,7 @@ class GrossSalaryBulkForm(forms.Form):
     )
     overwrite_existing = forms.BooleanField(
         required=False, initial=True,
-        label="Aynı ay zaten varsa değerleri güncelle (overwrite)."
+        label="If the month already exists, update it."
     )
 
     # Burada initial vermiyoruz ki "0" değerinden dolayı override engellenmesin
