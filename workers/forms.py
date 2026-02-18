@@ -174,6 +174,22 @@ class WorkerGrossMonthlyForm(forms.ModelForm):
             "department_short_name",
             "s_no",
         ]
+
+        labels = {
+            "year": "Year",
+            "month": "Month",
+            "gross_salary_hourly":  "Gross Salary Hourly",
+            "currency": "Currency",
+            "bonus": "Bonus (Only January)",
+            "group": "Group",
+            "short_class": "Short Class",
+            "class_name": "Class Name",
+            "department": "Department",
+            "work_class": "Work Class",
+            "location_name": "Location",
+            "department_short_name": "Director",
+            "s_no": "Cost Center",
+        }
         widgets = {
             "year": forms.NumberInput(attrs={"min": 2000, "max": 2100}),
             "month": forms.NumberInput(attrs={"min": 1, "max": 12}),

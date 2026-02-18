@@ -318,7 +318,6 @@ def update_lookup(request, model_name, pk):
         for field, value in request.POST.items():
             if field.endswith('-csrfmiddlewaretoken') or field == 'csrfmiddlewaretoken':
                 continue
-            # Örn: 'CostCenter-code' veya 'Department-name'
             if '-' in field:
                 _, real_field = field.split('-', 1)
                 if hasattr(obj, real_field):
@@ -417,6 +416,16 @@ def update_salary_record(request, salary_id):
                 month=month,
                 gross_salary_hourly=worker.gross_payment_hourly or 0,
                 currency=worker.currency,
+                    group=worker.group,
+                    short_class=worker.short_class,
+                    class_name=worker.class_name,
+                    department=worker.department,
+                    work_class=worker.work_class,
+                    location_name=worker.location_name,
+                    department_short_name=worker.department_short_name,
+                    s_no=worker.s_no,
+                    sicil_no=worker.sicil_no,
+                    bonus=worker.bonus if month == 1 else 0
             )
         else:
             salary = get_object_or_404(WorkerGrossMonthly, id=salary_id)
@@ -481,7 +490,7 @@ def update_salary_record(request, salary_id):
                 updated.location_name = worker.location_name
                 updated.department_short_name = worker.department_short_name
                 updated.s_no = worker.s_no
-                
+
             if updated.month == 1:
                 updated.bonus = worker.bonus
             else:
