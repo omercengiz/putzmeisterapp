@@ -28,6 +28,27 @@ services:
     volumes:
       - metabase_data:/metabase.db
 
+  gitea:
+    image: docker.gitea.com/gitea:1.25.4
+    container_name: "gitea"
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__database__DB_TYPE=postgres
+      - GITEA__database__HOST=db:5432
+      - GITEA__database__NAME=myproject
+      - GITEA__database__USER=myuser
+      - GITEA__database__PASSWD=mypassword
+    restart: "always"
+    ports:
+      - 3001:3000
+      - 2222:22
+    depends_on:
+      - db
+    volumes:
+      - gitea_data:/data
+
 volumes:
   postgres_data:
   metabase_data:
+  gitea_data:

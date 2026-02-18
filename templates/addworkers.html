@@ -66,4 +66,62 @@
 
     </div>
 </div>
+
+
+<script>
+function addThousandsTR(num) {
+    num = num.replace(/\D/g, "");
+    return num.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".tr-money").forEach(function (input) {
+
+        // Focus
+        input.addEventListener("focus", function () {
+            if (this.value === "0") {
+                this.value = "";
+            }
+        });
+
+        // Live format
+        input.addEventListener("input", function () {
+            let value = this.value;
+
+            value = value.replace(/[^0-9,]/g, "");
+
+            const parts = value.split(",");
+            let intPart = parts[0] || "";
+            let decPart = parts[1] || "";
+
+            decPart = decPart.slice(0, 2);
+            intPart = addThousandsTR(intPart);
+
+            if (value.includes(",")) {
+                this.value = intPart + "," + decPart;
+            } else {
+                this.value = intPart;
+            }
+        });
+
+        // Blur
+        input.addEventListener("blur", function () {
+            let value = this.value.trim();
+
+            if (value === "") {
+                this.value = "0";
+                return;
+            }
+
+            let [intPart, decPart] = value.split(",");
+
+            intPart = addThousandsTR(intPart || "");
+
+            this.value = decPart !== undefined
+                ? `${intPart},${decPart}`
+                : intPart;
+        });
+    });
+});
+</script>
 {% endblock body %}

@@ -15,7 +15,7 @@ import calendar
 import datetime
 import pandas as pd
 from benefits.models import Benefit, ArchivedBenefit
-from benefits.utils import is_after_exit
+from benefits.utils import is_after_exit, parse_tr_decimal
 
 
 
@@ -119,7 +119,7 @@ def updateWorkers(request, id):
 
         #if sicil_no exists then check(overlap)
         if exists_workers or exits_archived:
-            form.add_error("sicil_no", "This Sicil No is already used by another worker.")
+            form.add_error("sicil_no", "This ID No can be already used. Please check archived workers.")
         else:
             updated_worker.save()
             messages.success(request, "Information of the worker has been updated successfully.")
@@ -472,12 +472,16 @@ def update_salary_record(request, salary_id):
             updated = form.save(commit=False)
             updated.currency = worker.currency
             updated.sicil_no = worker.sicil_no  # güvenlik
-            updated.group = worker.group
-            updated.short_class = worker.short_class
-            updated.class_name = worker.class_name
-            updated.department = worker.department
-            updated.work_class = worker.work_class
-            updated.location_name = worker.location_name
+            if is_new_record:
+                updated.group = worker.group
+                updated.short_class = worker.short_class
+                updated.class_name = worker.class_name
+                updated.department = worker.department
+                updated.work_class = worker.work_class
+                updated.location_name = worker.location_name
+                updated.department_short_name = worker.department_short_name
+                updated.s_no = worker.s_no
+                
             if updated.month == 1:
                 updated.bonus = worker.bonus
             else:
@@ -577,7 +581,7 @@ def import_workers(request):
                     "Department": "department",
                     "Currency": "currency",
                     "Bonus": "bonus",
-                    "Location": "location_name",
+                    "LocationName": "location_name",
                     "Gross payment": "gross_payment",           
                     "Update Date": "update_date_user",             
                 }
@@ -592,6 +596,25 @@ def import_workers(request):
                 missing = [c for c in required if c not in df.columns]
                 if missing:
                     messages.error(request,f"❌ Eksik kolon: {', '.join(missing)}")
+                    return redirect("workers:import_workers")
+                
+                excel_sicils = (
+                    df["sicil_no"]
+                    .astype(str)
+                    .str.strip()
+                )
+
+                excel_sicils = [s for s in excel_sicils if s and s.lower() != "nan"]
+                excel_sicils_unique = list(set(excel_sicils))
+
+                archived_hits = list(
+                    ArchivedWorker.objects
+                    .filter(sicil_no__in=excel_sicils_unique)
+                    .values_list("sicil_no", flat=True)
+                )
+
+                if archived_hits:
+                    messages.error(request,"Some ID numbers already exist in the archived records. Please check the Archived table.")
                     return redirect("workers:import_workers")
 
                 lookups = {
@@ -615,7 +638,7 @@ def import_workers(request):
                         date_val = datetime.datetime.strptime(date_val, "%Y-%m-%d")
 
                     # 🔥 excelden gross payment / update tarihini al
-                    gross_payment = row.get("gross_payment", None)
+                    gross_payment = parse_tr_decimal(row.get("gross_payment", None))
                     update_date_user = row.get("update_date_user", None)
 
                     # convert update_date format
@@ -631,7 +654,8 @@ def import_workers(request):
                     for col, (Model, field) in lookups.items():
                         value = row.get(col)
                         obj = Model.objects.filter(**{field: value}).first()
-                        lookup_ids[f"{col}_id"] = obj.id
+                        lookup_ids[f"{col}_id"] = obj.id if obj else None
+
 
                     # 🔥 Worker Insert/Update
                     worker_obj, created = Workers.objects.update_or_create(
@@ -672,6 +696,15 @@ def import_workers(request):
                             salary_obj.gross_salary_hourly = gross_hourly
                             salary_obj.currency = worker_obj.currency
                             salary_obj.sicil_no = worker_obj.sicil_no
+                            salary_obj.group = worker_obj.group
+                            salary_obj.short_class = worker_obj.short_class
+                            salary_obj.class_name = worker_obj.class_name
+                            salary_obj.department = worker_obj.department
+                            salary_obj.work_class = worker_obj.work_class
+                            salary_obj.location_name = worker_obj.location_name
+                            salary_obj.department_short_name = worker_obj.department_short_name
+                            salary_obj.s_no = worker_obj.s_no
+
                             salary_obj.gross_payment = Decimal(str(gross_hourly)) * Decimal("7.5") * days
 
                             salary_obj.save()

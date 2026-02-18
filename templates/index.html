@@ -1,235 +1,144 @@
 {% extends "layout.html" %}
-
 {% block body %}
+
 <style>
-    :root {
-        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        --info-gradient: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
-        --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    body {
+        background: #eef1f5;
     }
 
-    .dashboard-card {
-        position: relative;
-        border-radius: 20px;
-        overflow: hidden;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        cursor: pointer;
-        height: 200px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-        text-decoration: none;
-        display: block;
+    .dashboard-wrapper {
+        margin-top: 130px;
+        margin-bottom: 60px;
     }
 
-    .dashboard-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        opacity: 0;
-        transition: opacity 0.4s ease;
-        background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+    .dashboard-header {
+        text-align: center;
+        margin-bottom: 50px;
     }
 
-    .dashboard-card:hover {
-        transform: translateY(-10px) scale(1.02);
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
-        text-decoration: none;
+    .dashboard-badge {
+        display: inline-block;
+        padding: 6px 14px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 1.5px;
+        border-radius: 30px;
+        background: rgba(13, 110, 253, 0.08);
+        color: #0d6efd;
+        margin-bottom: 15px;
     }
 
-    .dashboard-card:hover::before {
-        opacity: 1;
+    .dashboard-title {
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 10px;
     }
 
-    .dashboard-card:active {
-        transform: translateY(-5px) scale(0.98);
+    .dashboard-subtitle {
+        font-size: 0.95rem;
+        color: #6b7280;
     }
 
-    .card-content {
-        position: relative;
-        z-index: 2;
-        color: white;
+    .corporate-card {
+        border-radius: 16px;
+        border: 1px solid #e5e7eb;
+        background: #ffffff;
+        transition: all 0.25s ease;
+        padding: 35px 20px;
+        text-align: center;
+        height: 190px;
         display: flex;
         flex-direction: column;
-        align-items: center;
         justify-content: center;
-        height: 100%;
-        padding: 20px;
+        text-decoration: none;
+        color: #1f2937;
     }
 
-    .card-icon {
-        font-size: 3.5rem;
-        margin-bottom: 15px;
-        animation: float 3s ease-in-out infinite;
+    .corporate-card:hover {
+        box-shadow: 0 18px 45px rgba(0,0,0,0.08);
+        transform: translateY(-6px);
+        border-color: #d1d5db;
+        text-decoration: none;
+        color: #1f2937;
     }
 
-    @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
+    .corporate-icon {
+        font-size: 2.5rem;
+        margin-bottom: 18px;
+        color: #1e3c72;
+        transition: 0.3s ease;
     }
 
-    .card-title {
-        font-size: 1.5rem;
+    .corporate-card:hover .corporate-icon {
+        transform: scale(1.1);
+        color: #0d6efd;
+    }
+
+    .corporate-title {
+        font-size: 1.1rem;
         font-weight: 600;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-        margin: 0;
+        margin-bottom: 6px;
     }
 
-    .card-gradient-1 {
-        background: var(--info-gradient);
-    }
-
-    .card-gradient-2 {
-        background: var(--primary-gradient);
-    }
-
-    .card-gradient-3 {
-        background: var(--success-gradient);
-    }
-
-    .card-gradient-4 {
-        background: var(--warning-gradient);
-    }
-
-    .dashboard-card {
-        opacity: 0;
-        animation: fadeInUp 0.8s ease forwards;
-    }
-
-    .dashboard-card:nth-child(1) { animation-delay: 0.1s; }
-    .dashboard-card:nth-child(2) { animation-delay: 0.2s; }
-    .dashboard-card:nth-child(3) { animation-delay: 0.3s; }
-    .dashboard-card:nth-child(4) { animation-delay: 0.4s; }
-
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .ripple {
-        position: absolute;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.6);
-        transform: scale(0);
-        animation: ripple-animation 0.6s ease-out;
-        pointer-events: none;
-    }
-
-    @keyframes ripple-animation {
-        to {
-            transform: scale(4);
-            opacity: 0;
-        }
+    .corporate-desc {
+        font-size: 0.85rem;
+        color: #6b7280;
     }
 
     @media (max-width: 768px) {
-        .dashboard-card {
-            height: 180px;
-        }
-        
-        .card-icon {
-            font-size: 2.5rem;
-        }
-        
-        .card-title {
-            font-size: 1.2rem;
+        .corporate-card {
+            height: 170px;
         }
     }
 </style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-<div class="container" style="margin-top: 150px;">
-    <div class="row justify-content-center g-4">
-        <div class="col-md-6 col-lg-5">
-            <a href="http://localhost:3000/" class="dashboard-card card-gradient-1">
-                <div class="card-content">
-                    <i class="fas fa-file-alt card-icon"></i>
-                    <h4 class="card-title">Reports</h4>
-                </div>
-            </a>
-        </div>
-        
-        <div class="col-md-6 col-lg-5">
-            <a href="/benefits/" class="dashboard-card card-gradient-2">
-                <div class="card-content">
-                    <i class="fas fa-gift card-icon"></i>
-                    <h4 class="card-title">Benefits</h4>
-                </div>
-            </a>
-        </div>
-        
-        <div class="col-md-6 col-lg-5">
-            <a href="/workers/dashboard/" class="dashboard-card card-gradient-3">
-                <div class="card-content">
-                    <i class="fas fa-user-tie card-icon"></i>
-                    <h4 class="card-title">Workers</h4>
-                </div>
-            </a>
-        </div>
-        
-        <div class="col-md-6 col-lg-5">
-            <a href="/user/permissions/" class="dashboard-card card-gradient-4">
-                <div class="card-content">
-                    <i class="fas fa-lock card-icon"></i>
-                    <h4 class="card-title">Authorization Dashboard</h4>
-                </div>
-            </a>
+<div class="container dashboard-wrapper">
+
+    <div class="dashboard-header">
+        <div class="dashboard-badge">CORPORATE INTERNAL PLATFORM</div>
+        <h2 class="dashboard-title">HR Management Dashboard</h2>
+        <div class="dashboard-subtitle">
+            Workforce administration, compensation and authorization management system
         </div>
     </div>
+
+    <div class="row g-4">
+
+        <div class="col-md-6 col-lg-3">
+            <a href="http://localhost:3000/" class="corporate-card">
+                <i class="fas fa-chart-line corporate-icon"></i>
+                <div class="corporate-title">Reports</div>
+                <div class="corporate-desc">Financial & operational reporting</div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <a href="/benefits/" class="corporate-card">
+                <i class="fas fa-gift corporate-icon"></i>
+                <div class="corporate-title">Benefits</div>
+                <div class="corporate-desc">Employee benefits management</div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <a href="/workers/dashboard/" class="corporate-card">
+                <i class="fas fa-user-tie corporate-icon"></i>
+                <div class="corporate-title">Workers</div>
+                <div class="corporate-desc">Workforce administration</div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+            <a href="/user/permissions/" class="corporate-card">
+                <i class="fas fa-shield-alt corporate-icon"></i>
+                <div class="corporate-title">Authorization</div>
+                <div class="corporate-desc">Access & permission control</div>
+            </a>
+        </div>
+
+    </div>
 </div>
-
-<script>
-    // Ripple effect on click
-    document.querySelectorAll('.dashboard-card').forEach(card => {
-        card.addEventListener('click', function(e) {
-            const ripple = document.createElement('span');
-            ripple.classList.add('ripple');
-            
-            const rect = this.getBoundingClientRect();
-            const size = Math.max(rect.width, rect.height);
-            const x = e.clientX - rect.left - size / 2;
-            const y = e.clientY - rect.top - size / 2;
-            
-            ripple.style.width = ripple.style.height = size + 'px';
-            ripple.style.left = x + 'px';
-            ripple.style.top = y + 'px';
-            
-            this.appendChild(ripple);
-            
-            setTimeout(() => ripple.remove(), 600);
-        });
-    });
-
-    // Parallax effect on mouse move
-    document.addEventListener('mousemove', (e) => {
-        const cards = document.querySelectorAll('.dashboard-card');
-        const mouseX = e.clientX / window.innerWidth;
-        const mouseY = e.clientY / window.innerHeight;
-        
-        cards.forEach((card, index) => {
-            const speed = (index + 1) * 2;
-            const x = (mouseX - 0.5) * speed;
-            const y = (mouseY - 0.5) * speed;
-            
-            card.style.transform = `translateX(${x}px) translateY(${y}px)`;
-        });
-    });
-
-    // Reset transform on mouse leave
-    document.addEventListener('mouseleave', () => {
-        document.querySelectorAll('.dashboard-card').forEach(card => {
-            card.style.transform = '';
-        });
-    });
-</script>
 
 {% endblock body %}

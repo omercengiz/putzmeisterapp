@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% load crispy_forms_tags %}
-
+{% load l10n %}
 {% block body %}
 
 {% url 'workers:list_worker_salaries' worker.id as salary_list_url %}

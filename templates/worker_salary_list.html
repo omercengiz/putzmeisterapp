@@ -97,13 +97,21 @@
   <!-- Salary Table -->
   <div class="card shadow-sm">
     <div class="card-body">
-
-      <table class="table table-striped align-middle">
+      <table class="table table-striped table-hover align-middle">
         <thead class="table-dark">
           <tr>
             <th>Month</th>
             <th>Year</th>
+            <th class="text-end">Hourly</th>
             <th class="text-end">Gross Salary</th>
+            <th>Currency</th>
+            <th>Bonus</th>
+            <th>Department</th>
+            <th>Class</th>
+            <th>Work Class</th>
+            <th>Location</th>
+            <th>Cost Center</th>
+            <th>Class</th>
             <th class="text-center">Process</th>
           </tr>
         </thead>
@@ -111,6 +119,7 @@
         <tbody>
           {% for row in months_data %}
           <tr>
+
             <td>{{ row.month }}</td>
 
             <td>
@@ -119,38 +128,106 @@
               {% endlocalize %}
             </td>
 
-            <td class="text-end">
-                {% if row.salary %}
-                    <div>
-                        {% if row.salary.gross_payment %}
-                            {{ row.salary.gross_payment|floatformat:2|localize }}
-                        {% else %}
-                            <span class="text-muted">Not calculated</span>
-                        {% endif %}
-                    </div>
+            {% if row.salary %}
 
+              <!-- Hourly -->
+              <td class="text-end">
+                {{ row.salary.gross_salary_hourly|floatformat:2|localize }}
+              </td>
+
+              <!-- Gross -->
+              <td class="text-end fw-bold">
+                {{ row.salary.gross_payment|floatformat:2|localize }}
+              </td>
+
+              <!-- Currency -->
+              <td>{{ row.salary.currency }}</td>
+
+              <!-- Bonus -->
+              <td>
+                {% if row.salary.bonus %}
+                  <span class="badge bg-success">{{ row.salary.bonus }}</span>
                 {% else %}
-                    <span class="text-muted">There is no salary for this month</span>
+                  <span class="text-muted">-</span>
                 {% endif %}
+              </td>
 
-            </td>
+              <!-- Department -->
+              <td>
+                {% if row.salary.department %}
+                  {{ row.salary.department }}
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
 
+              <!-- Class -->
+              <td>
+                {% if row.salary.class_name %}
+                  {{ row.salary.class_name }}
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
 
+              <!-- Work Class -->
+              <td>
+                {% if row.salary.work_class %}
+                  {{ row.salary.work_class }}
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+
+              <!-- Location -->
+              <td>
+                {% if row.salary.location_name %}
+                  {{ row.salary.location_name }}
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+
+              <!-- Cost Center -->
+              <td>
+                {% if row.salary.s_no %}
+                  {{ row.salary.s_no }}
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+
+              <!-- Short Class -->
+              <td>
+                {% if row.salary.short_class %}
+                  <span class="badge bg-primary">{{ row.salary.short_class }}</span>
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+
+            {% else %}
+
+              <td colspan="10" class="text-center text-muted">
+                There is no salary for this month
+              </td>
+
+            {% endif %}
+
+            <!-- Process -->
             <td class="text-center">
               <div class="d-flex justify-content-center gap-2">
 
-                <!-- Update / Add -->
                 <a href="{% url 'workers:update_salary_record' row.salary.id|default:0 %}?worker_id={{ worker.id }}&month={{ row.month_num }}&year={{ row.year }}"
-                   class="btn btn-sm btn-primary">
+                  class="btn btn-sm btn-primary">
                     {% if row.salary %}Update{% else %}Add{% endif %}
                 </a>
 
-                <!-- Delete -->
                 {% if row.salary %}
                 <a href="{% url 'workers:delete_salary_record' row.salary.id %}"
-                   class="btn btn-sm btn-danger"
-                   onclick="return confirm('Bu maaş kaydını silmek istediğinize emin misiniz?');">
-                   Delete
+                  class="btn btn-sm btn-danger"
+                  onclick="return confirm('Bu maaş kaydını silmek istediğinize emin misiniz?');">
+                  Delete
                 </a>
                 {% endif %}
 
@@ -160,9 +237,7 @@
           </tr>
           {% endfor %}
         </tbody>
-
       </table>
-
     </div>
   </div>
 

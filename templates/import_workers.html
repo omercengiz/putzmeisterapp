@@ -62,17 +62,16 @@
               <li class="list-group-item">Department</li>
               <li class="list-group-item">Currency</li>
               <li class="list-group-item">Bonus (0-100)</li>
-
-              <!-- Yeni Eklenen Alanlar -->
               <li class="list-group-item text-primary fw-bold">Gross payment (monthly total)</li>
               <li class="list-group-item text-primary fw-bold">Update Date (YYYY-MM-DD → optional)</li>
+              <li class="list-group-item text-primary fw-bold">LocationName</li>
             </ul>
 
             <hr>
 
             <p class="mt-2 text-muted">
-              ⚠ <b>Gross Payment</b> girilir → sistem otomatik olarak <b>saatlik ücreti (gross_payment/total_hours)</b> oluşturur.<br>
-              ⚠ <b>Update Date girilirse</b> o tarihten yıl sonuna kadar WorkerGrossMonthly kayıtları güncellenir/oluşturulur.
+              ⚠ When <b>Gross Payment</b> is entered, the system automatically calculates the <b>(gross_payment / total_hours)</b><br>
+              ⚠ If <b>Update Date</b> is provided, monthly records are created/updated from that date until the end of the year
             </p>
 
           </div>

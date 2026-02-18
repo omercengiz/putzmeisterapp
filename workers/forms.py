@@ -3,11 +3,22 @@ from .models import Workers, WorkerGrossMonthly, Currency
 import datetime
 import calendar
 from decimal import Decimal
+from benefits.utils import parse_tr_decimal
 
 
 class WorkersForm(forms.ModelForm):
+    gross_payment = forms.CharField(
+        required=False,
+        localize=True,
+        widget=forms.TextInput(attrs={
+            "class": "form-control tr-money",
+            "placeholder": "0",
+            "inputmode": "decimal"
+        })
+    )
     class Meta:
         model = Workers
+        localized_fields = ('gross_payment',),
         fields = [
             "group", 
             "sicil_no", 
@@ -44,6 +55,7 @@ class WorkersForm(forms.ModelForm):
 
     def clean_gross_payment(self):
         gross_payment = self.cleaned_data.get("gross_payment")
+        gross_payment = parse_tr_decimal(gross_payment)
 
         if gross_payment is None or gross_payment <= 0:
             raise forms.ValidationError(
@@ -79,8 +91,14 @@ class GrossSalaryBulkForm(forms.Form):
     )
 
     # Burada initial vermiyoruz ki "0" değerinden dolayı override engellenmesin
-    gross_salary_hourly = forms.DecimalField(
-        label="Gross Salary Hourly", max_digits=15, decimal_places=2, min_value=Decimal('0')
+    gross_salary_hourly = forms.CharField(
+        label="Gross Salary Hourly",
+        localize=True,
+        widget=forms.TextInput(attrs={
+            "class": "tr-money",
+            "placeholder": "0",
+            "inputmode": "decimal",
+        })
     )
 
     # Currency FK dropdown
@@ -90,6 +108,12 @@ class GrossSalaryBulkForm(forms.Form):
         empty_label="—",
         label="Currency"
     )
+
+    def clean_gross_salary_hourly(self):
+        return parse_tr_decimal(
+            self.cleaned_data.get("gross_salary_hourly")
+        )
+
 
     def __init__(self, *args, **kwargs):
         """
@@ -126,15 +150,40 @@ class GrossSalaryBulkForm(forms.Form):
 
 
 class WorkerGrossMonthlyForm(forms.ModelForm):
+    gross_salary_hourly = forms.CharField(
+        localize=True,
+        widget=forms.TextInput(attrs={
+            "class": "tr-money",
+            "inputmode": "decimal",
+        })
+    )
     class Meta:
         model = WorkerGrossMonthly
-        fields = ["year", "month", "gross_salary_hourly", "currency"]
+        fields = [
+            "year",
+            "month",
+            "gross_salary_hourly",
+            "currency",
+            "bonus",
+            "group",
+            "short_class",
+            "class_name",
+            "department",
+            "work_class",
+            "location_name",
+            "department_short_name",
+            "s_no",
+        ]
         widgets = {
             "year": forms.NumberInput(attrs={"min": 2000, "max": 2100}),
             "month": forms.NumberInput(attrs={"min": 1, "max": 12}),
             "gross_salary_hourly": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
             "gross_payment": forms.NumberInput(attrs={"step": "0.01", "min": "0"}),
         }
+    def clean_gross_salary_hourly(self):
+        return parse_tr_decimal(
+            self.cleaned_data.get("gross_salary_hourly")
+        )
 
 class WorkerImportForm(forms.Form):
     excel_file = forms.FileField(
