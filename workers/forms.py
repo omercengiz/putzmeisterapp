@@ -37,6 +37,24 @@ class WorkersForm(forms.ModelForm):
             "total_work_hours",
             "update_date_user"
         ]
+        labels = {
+            "group": "Group",
+            "sicil_no": "Sicil No",
+            "s_no": "Cost Center",
+            "department_short_name": "Director",
+            "department": "Department",
+            "short_class": "Short Class",
+            "name_surname": "Name Surname",
+            "date_of_recruitment": "Date of Recruitment",
+            "work_class": "Work Class",
+            "location_name": "Location Name",
+            "class_name": "Class Name",
+            "gross_payment":  "Gross Payment (Monthly Total)",
+            "currency": "Currency",
+            "bonus": "Bonus (Only January)",
+            "total_work_hours": "Total Work Hours (Monthly)",
+            "update_date_user": "Update Date (Optional, YYYY-MM-DD)"
+        }
         widgets = {
             'date_of_recruitment': forms.DateInput(format="%Y-%m-%d", attrs={'type': 'date'}),
             'update_date_user': forms.DateInput(format="%Y-%m-%d", attrs={'type': 'date'})
