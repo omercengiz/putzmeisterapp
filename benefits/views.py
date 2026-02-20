@@ -47,7 +47,11 @@ def parse_bayram_by_year(value, year, month):
     Diğer aylarda otomatik 0.
     """
     bayram_months = get_bayram_months_for_year(year)
-    if month in bayram_months:
+
+    # Bayramın olduğu ayların bir önceki aylarını hesapla
+    previous_months = {m - 1 for m in bayram_months if m > 1}
+
+    if month in previous_months:
         return parse_tr_decimal(value)
     return Decimal("0")
 
