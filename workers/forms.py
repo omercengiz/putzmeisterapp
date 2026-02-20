@@ -51,7 +51,7 @@ class WorkersForm(forms.ModelForm):
             "class_name": "Class Name",
             "gross_payment":  "Gross Payment (Monthly Total)",
             "currency": "Currency",
-            "bonus": "Bonus (Only January)",
+            "bonus": "Bonus",
             "total_work_hours": "Total Work Hours (Monthly)",
             "update_date_user": "Update Date (Optional, YYYY-MM-DD)"
         }
@@ -198,7 +198,7 @@ class WorkerGrossMonthlyForm(forms.ModelForm):
             "month": "Month",
             "gross_salary_hourly":  "Gross Salary Hourly",
             "currency": "Currency",
-            "bonus": "Bonus (Only January)",
+            "bonus": "Bonus",
             "group": "Group",
             "short_class": "Short Class",
             "class_name": "Class Name",
